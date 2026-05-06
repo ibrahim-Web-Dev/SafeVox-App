@@ -36,7 +36,7 @@ export function VoxeraHead({ state = 'idle', isTalking = false, size = 220 }) {
       className="select-none relative"
       style={{ width: size, height: h }}
     >
-      <img src="/voxi/voxi-mascot.svg" width={size} height={h} alt="Voxi" draggable={false} />
+      <img src={`${import.meta.env.BASE_URL}voxi/voxi-mascot.svg`} width={size} height={h} alt="Voxi" draggable={false} />
 
       {/* Durum animasyonları — SVG overlay */}
       <svg viewBox="0 0 400 480" width={size} height={h}
