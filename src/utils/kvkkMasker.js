@@ -259,9 +259,9 @@ export function highlightSensitiveData(text, findings) {
   let cursor = 0;
 
   const colorMap = {
-    TC: 'bg-red-500/20 border border-red-500/40 text-red-300',
-    PHONE: 'bg-yellow-500/20 border border-yellow-500/40 text-yellow-300',
-    NAME: 'bg-blue-500/20 border border-blue-500/40 text-blue-300',
+    TC: 'bg-red-100 border border-red-300 text-red-700',
+    PHONE: 'bg-yellow-100 border border-yellow-300 text-yellow-800',
+    NAME: 'bg-blue-100 border border-blue-300 text-blue-700',
   };
 
   for (const f of sorted) {

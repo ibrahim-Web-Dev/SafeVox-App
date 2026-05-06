@@ -5,7 +5,7 @@ import {
   Mic, MicOff, PhoneOff, User, CreditCard, Wifi, Star,
   AlertTriangle, CheckCircle2, ChevronRight,
   Loader2, Zap, Search, Phone, Pencil, X, Check, ClipboardList,
-  ShieldCheck, History, TrendingUp, Award, Play, BarChart2,
+  ShieldCheck, History, TrendingUp, Award, Play, BarChart2, Maximize2,
 } from 'lucide-react';
 import { lookupCustomer, findCustomerByName, extractTC, extractPhone, detectPanels } from '../utils/mockCRM';
 const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
@@ -44,6 +44,14 @@ function maskPII(text) {
     )
     .replace(/0[5]\d{9}/g, '[TEL GİZLENDİ]')
     .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[KART GİZLENDİ]');
+}
+
+// ── Telefon maskeleme ─────────────────────────────────────────────────────────
+function maskPhone(phone) {
+  if (!phone) return '—';
+  const d = phone.replace(/\D/g, '');
+  if (d.length < 10) return phone;
+  return d.slice(0, 4) + ' *** ** ' + d.slice(-2);
 }
 
 // ── SGS Risk Tespiti (Hatalı Bilgi) ──────────────────────────────────────────
@@ -268,13 +276,14 @@ function HistoryPanel({ history, onClose }) {
 // ── Risk rozeti ───────────────────────────────────────────────────────────────
 function RiskBadge({ level }) {
   const cfg = {
-    yüksek: 'bg-red-50 text-red-600 border-red-200',
-    orta:   'bg-amber-50 text-amber-600 border-amber-200',
-    düşük:  'bg-emerald-50 text-emerald-600 border-emerald-200',
+    yüksek: { cls: 'bg-red-50 text-red-600 border-red-200',      label: '⚠ Churn Riski!' },
+    orta:   { cls: 'bg-amber-50 text-amber-600 border-amber-200', label: '⚠ Churn Riski'  },
+    düşük:  { cls: 'bg-emerald-50 text-emerald-600 border-emerald-200', label: '✓ Düşük Risk' },
   };
+  const { cls, label } = cfg[level] || cfg.orta;
   return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${cfg[level] || cfg.orta}`}>
-      {level === 'yüksek' ? '⚠ Yüksek Risk' : level === 'orta' ? '● Orta Risk' : '✓ Düşük Risk'}
+    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
+      {label}
     </span>
   );
 }
@@ -343,6 +352,18 @@ function CustomerCard({ customer, notes, onNotesChange }) {
           {customer.acikSikayet > 0 && (
             <p className="text-xs text-red-500 mt-1">{customer.acikSikayet} açık şikayet</p>
           )}
+        </div>
+      </div>
+
+      {/* Müşteri hattı */}
+      <div className="mt-3 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-200 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-slate-400 mb-0.5">Müşteri Hattı</p>
+          <p className="font-mono font-semibold text-slate-700 text-sm tracking-wide">{maskPhone(customer.telefon)}</p>
+        </div>
+        <div className="flex items-center gap-1.5 bg-safe-50 border border-safe-200 rounded-lg px-2 py-1">
+          <ShieldCheck className="w-3.5 h-3.5 text-safe-500" />
+          <span className="text-xs text-safe-600 font-medium">KVKK</span>
         </div>
       </div>
 
@@ -580,6 +601,353 @@ function SikayetPanel({ customer }) {
   );
 }
 
+// ── Paket Kataloğu & Öneri Mantığı ───────────────────────────────────────────
+const PAKET_KATALOGU = [
+  { id: 'akilli15',    ad: 'Akıllı 15GB',      tam: 'Turkcell Akıllı 15GB',     fiyat: 179, gb: 15   },
+  { id: 'super30',     ad: 'Süper 30GB',        tam: 'Turkcell Süper 30GB',      fiyat: 299, gb: 30   },
+  { id: 'super50',     ad: 'Süper 50GB',        tam: 'Turkcell Süper 50GB',      fiyat: 399, gb: 50   },
+  { id: 'sinirsiziplus', ad: 'Sınırsız Plus',   tam: 'Turkcell Sınırsız Plus',   fiyat: 549, gb: null },
+  { id: 'kurumsal50',  ad: 'Kurumsal 50GB',     tam: 'Turkcell Kurumsal 50GB',   fiyat: 699, gb: 50   },
+  { id: 'kurumsal100', ad: 'Kurumsal 100GB',    tam: 'Turkcell Kurumsal 100GB',  fiyat: 999, gb: 100  },
+];
+
+function getPaketNotlari(pkg, customer) {
+  if (pkg.tam === customer.paket) {
+    return [{ text: 'Aktif Paket', cls: 'bg-indigo-100 text-indigo-600 border-indigo-200' }];
+  }
+  const notlar = [];
+  if (pkg.fiyat < customer.aylikUcret) {
+    notlar.push({ text: 'Müşteri önceden istemedi', cls: 'bg-slate-100 text-slate-500 border-slate-200' });
+    if (customer.riskSeviyesi === 'yüksek') {
+      notlar.push({ text: 'Churn önleme için dene', cls: 'bg-red-100 text-red-600 border-red-200' });
+    }
+  }
+  if (customer.internet?.limit && pkg.gb && pkg.gb > customer.internet.limit &&
+      customer.internet.kullanim / customer.internet.limit > 0.7) {
+    notlar.push({ text: 'Kullanım yüksek, idealdir', cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' });
+  }
+  if (pkg.fiyat > customer.aylikUcret * 1.4) {
+    notlar.push({ text: 'Fiyatı yüksek bulabilir', cls: 'bg-amber-100 text-amber-700 border-amber-200' });
+  }
+  if (!notlar.length) notlar.push({ text: 'Alternatif seçenek', cls: 'bg-slate-100 text-slate-400 border-slate-200' });
+  return notlar;
+}
+
+function sortPaketleri(customer) {
+  return [...PAKET_KATALOGU].sort((a, b) => {
+    if (a.tam === customer.paket) return -1;
+    if (b.tam === customer.paket) return 1;
+    return Math.abs(a.fiyat - customer.aylikUcret) - Math.abs(b.fiyat - customer.aylikUcret);
+  });
+}
+
+// ── Genişletilmiş Panel İçerikleri ────────────────────────────────────────────
+function PaketExpanded({ customer }) {
+  const paketler = sortPaketleri(customer);
+  return (
+    <>
+      <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+        <div className="flex items-center gap-3 pr-10">
+          <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center flex-shrink-0">
+            <Wifi className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-800">Paket Önerisi</h2>
+            <p className="text-xs text-slate-400">Öncelik sırasına göre listelendi</p>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+        {paketler.map((pkg, i) => {
+          const notlar = getPaketNotlari(pkg, customer);
+          const isActive = pkg.tam === customer.paket;
+          return (
+            <div key={pkg.id} className={`flex items-center gap-3 rounded-2xl px-4 py-3 border transition ${
+              isActive ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:border-slate-300'
+            }`}>
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                isActive ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-500'
+              }`}>
+                {isActive ? '✓' : i + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold ${isActive ? 'text-indigo-700' : 'text-slate-800'}`}>
+                  Turkcell {pkg.ad}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={`text-base font-bold ${isActive ? 'text-indigo-600' : 'text-slate-700'}`}>{pkg.fiyat} ₺</span>
+                  <span className="text-xs text-slate-400">/ay ·</span>
+                  {pkg.gb ? <span className="text-xs text-slate-400">{pkg.gb} GB</span> : <span className="text-xs text-slate-400">Sınırsız ∞</span>}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                {notlar.map((n, j) => (
+                  <span key={j} className={`text-xs px-2 py-0.5 rounded-full border font-medium whitespace-nowrap ${n.cls}`}>{n.text}</span>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="px-6 pb-5 pt-3 border-t border-slate-100">
+        <p className="text-xs text-slate-400 text-center">
+          Aktif: <strong className="text-slate-600">{customer.paket}</strong> · {customer.aylikUcret} ₺/ay
+        </p>
+      </div>
+    </>
+  );
+}
+
+function CaymaExpanded({ customer }) {
+  const ipuclar = [
+    `${customer.sadakatPuani.toLocaleString('tr')} sadakat puanı var — özel teklif sunun.`,
+    `Sözleşme ${customer.sozlesmeBitis}'de bitiyor, ${customer.kalanAy} ay kaldı.`,
+    'İndirimli paket geçiş teklifi yapabilirsiniz.',
+    customer.acikSikayet > 0 ? 'Önce açık şikayeti çözmeye çalışın.' : 'Aktif şikayeti bulunmuyor, olumlu görüşme yapılabilir.',
+  ];
+  return (
+    <>
+      <div className="px-6 pt-6 pb-4 border-b border-red-50">
+        <div className="flex items-center gap-3 pr-10">
+          <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center flex-shrink-0">
+            <PhoneOff className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-800">Cayma / İptal Detayı</h2>
+            <p className="text-xs text-slate-400">Müşteriyi elde tutma stratejisi</p>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="bg-red-50 rounded-2xl p-4 border border-red-100 space-y-2">
+          <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">Cayma Bedeli Dökümü</p>
+          <div className="flex justify-between text-sm"><span className="text-slate-600">Kalan ay</span><span className="font-semibold">{customer.kalanAy} ay</span></div>
+          <div className="flex justify-between text-sm"><span className="text-slate-600">Aylık ücret</span><span className="font-semibold">{customer.aylikUcret} ₺</span></div>
+          <div className="flex justify-between text-sm border-t border-red-100 pt-2">
+            <span className="font-bold text-red-700">Toplam Cayma Bedeli</span>
+            <span className="font-bold text-red-700 text-lg">{customer.caymaUcreti.toLocaleString('tr')} ₺</span>
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Elde Tutma Stratejisi</p>
+          <div className="space-y-2">
+            {ipuclar.map((ipuc, i) => (
+              <div key={i} className="flex items-start gap-2 bg-amber-50 rounded-xl px-3 py-2.5 border border-amber-100">
+                <span className="text-amber-500 flex-shrink-0 mt-0.5">💡</span>
+                <span className="text-sm text-amber-800">{ipuc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function FaturaExpanded({ customer }) {
+  const toplam = customer.sonFaturalar.reduce((s, f) => s + f.tutar, 0);
+  const odenmis = customer.sonFaturalar.filter((f) => f.durum === 'Ödendi').reduce((s, f) => s + f.tutar, 0);
+  const gecikmisToplam = customer.sonFaturalar.filter((f) => f.durum === 'Gecikmiş').reduce((s, f) => s + f.tutar, 0);
+  return (
+    <>
+      <div className="px-6 pt-6 pb-4 border-b border-blue-50">
+        <div className="flex items-center gap-3 pr-10">
+          <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0">
+            <CreditCard className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-800">Fatura Geçmişi</h2>
+            <p className="text-xs text-slate-400">Son {customer.sonFaturalar.length} ay</p>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Toplam', val: `${toplam} ₺`, cls: 'bg-slate-50 border-slate-100', valCls: 'text-slate-700' },
+            { label: 'Ödendi', val: `${odenmis} ₺`, cls: 'bg-emerald-50 border-emerald-100', valCls: 'text-emerald-700' },
+            { label: 'Gecikmiş', val: gecikmisToplam > 0 ? `${gecikmisToplam} ₺` : '—', cls: gecikmisToplam > 0 ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100', valCls: gecikmisToplam > 0 ? 'text-red-600' : 'text-slate-400' },
+          ].map((c) => (
+            <div key={c.label} className={`rounded-xl p-3 border text-center ${c.cls}`}>
+              <p className="text-xs text-slate-400 mb-1">{c.label}</p>
+              <p className={`font-bold ${c.valCls}`}>{c.val}</p>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {customer.sonFaturalar.map((f, i) => (
+            <div key={i} className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 border border-slate-200">
+              <div>
+                <p className="text-sm font-semibold text-slate-700">{f.ay}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{f.durum === 'Ödendi' ? 'Zamanında ödendi' : 'Gecikmiş ödeme'}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <p className="font-bold text-slate-800">{f.tutar} ₺</p>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${f.durum === 'Ödendi' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>{f.durum}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function SadakatExpanded({ customer }) {
+  const oduller = [
+    { puan: 200,  ad: 'Starbucks İçecek',          ikon: '☕', sure: 'Hemen kullanılabilir' },
+    { puan: 500,  ad: '5 GB Ek İnternet',          ikon: '📶', sure: '1 ay geçerli' },
+    { puan: 750,  ad: 'Netflix 1 Ay',              ikon: '🎬', sure: '1 ay geçerli' },
+    { puan: 1000, ad: 'TV+ 1 Aylık Üyelik',        ikon: '📺', sure: '1 ay geçerli' },
+    { puan: 1500, ad: 'BiP Premium 3 Ay',          ikon: '💬', sure: '3 ay geçerli' },
+    { puan: 2000, ad: '10 GB Ek İnternet',         ikon: '📶', sure: '1 ay geçerli' },
+    { puan: 3000, ad: 'Akıllı Saat İndirimi',      ikon: '⌚', sure: 'Tek kullanım' },
+    { puan: 5000, ad: 'Telefon Yenileme İndirimi', ikon: '📱', sure: 'Tek kullanım' },
+  ];
+  const kullanilabilir = oduller.filter((o) => o.puan <= customer.sadakatPuani);
+  const yakin = oduller.filter((o) => o.puan > customer.sadakatPuani && o.puan <= customer.sadakatPuani * 1.4);
+  return (
+    <>
+      <div className="px-6 pt-6 pb-4 border-b border-amber-50">
+        <div className="flex items-center gap-3 pr-10">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0">
+            <Star className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-800">Sadakat & Ödüller</h2>
+            <p className="text-xs text-slate-400">Mevcut puan: <span className="font-bold text-amber-600">{customer.sadakatPuani.toLocaleString('tr')} P</span></p>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        {kullanilabilir.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Hemen Kullanılabilir</p>
+            <div className="space-y-2">
+              {kullanilabilir.map((o, i) => (
+                <div key={i} className="flex items-center gap-3 bg-amber-50 rounded-xl px-4 py-3 border border-amber-100">
+                  <span className="text-xl flex-shrink-0">{o.ikon}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-slate-800">{o.ad}</p>
+                    <p className="text-xs text-slate-400">{o.sure}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-amber-600">{o.puan.toLocaleString('tr')} P</p>
+                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Kullanılabilir</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {yakin.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Yakında Ulaşılabilir</p>
+            <div className="space-y-2">
+              {yakin.map((o, i) => (
+                <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 opacity-70">
+                  <span className="text-xl flex-shrink-0">{o.ikon}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-slate-600">{o.ad}</p>
+                    <p className="text-xs text-slate-400">{o.sure}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-slate-500">{o.puan.toLocaleString('tr')} P</p>
+                    <p className="text-xs text-slate-400">{(o.puan - customer.sadakatPuani).toLocaleString('tr')} P eksik</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function SikayetExpanded({ customer }) {
+  const aksiyonlar = [
+    { ikon: '🛠', baslik: 'Teknik Sorun Bildir',  aciklama: 'İnternet, sinyal veya cihaz sorunu için teknik ekibe ilet'     },
+    { ikon: '💰', baslik: 'Fatura İtirazı Aç',    aciklama: 'Hatalı veya itiraz edilen fatura tutarlarını sorgula'          },
+    { ikon: '📝', baslik: 'Genel Şikayet Oluştur', aciklama: 'Yukarıdaki kategorilere uymayan genel şikayetler'             },
+    { ikon: '📞', baslik: 'Yöneticiye Bağla',     aciklama: 'Acil durum veya çözümsüz kalan şikayetlerde üst yöneticiye aktar' },
+  ];
+  return (
+    <>
+      <div className="px-6 pt-6 pb-4 border-b border-orange-50">
+        <div className="flex items-center gap-3 pr-10">
+          <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-800">Şikayet Yönetimi</h2>
+            {customer.acikSikayet > 0
+              ? <p className="text-xs text-red-500 font-semibold">{customer.acikSikayet} açık şikayet mevcut!</p>
+              : <p className="text-xs text-slate-400">Açık şikayet yok</p>}
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        {customer.acikSikayet > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-red-700">{customer.acikSikayet} Açık Şikayet</p>
+              <p className="text-xs text-red-500 mt-0.5">Mevcut şikayetleri önce çözmeye çalışın.</p>
+            </div>
+          </div>
+        )}
+        <div className="space-y-2">
+          {aksiyonlar.map((a, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-2xl px-4 py-3 border border-slate-200 bg-white hover:border-orange-200 hover:bg-orange-50 cursor-pointer transition">
+              <span className="text-xl flex-shrink-0">{a.ikon}</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-slate-800">{a.baslik}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{a.aciklama}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Genişletilmiş Panel Modal ─────────────────────────────────────────────────
+function ExpandedModal({ panelKey, customer, onClose }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 340, damping: 30 }}
+        className="relative bg-white rounded-3xl shadow-2xl shadow-slate-900/20 w-full max-w-2xl border border-slate-100 flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition"
+        >
+          <X className="w-4 h-4 text-slate-500" />
+        </button>
+        {panelKey === 'paket'   && <PaketExpanded   customer={customer} />}
+        {panelKey === 'cayma'   && <CaymaExpanded   customer={customer} />}
+        {panelKey === 'fatura'  && <FaturaExpanded  customer={customer} />}
+        {panelKey === 'sadakat' && <SadakatExpanded customer={customer} />}
+        {panelKey === 'sikayet' && <SikayetExpanded customer={customer} />}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── Çağrı Formu Modal ─────────────────────────────────────────────────────────
 const SONUC_OPTIONS    = ['Çözüldü', 'Beklemede', 'Yönlendirildi', 'Çözümsüz'];
 const KATEGORI_OPTIONS = ['Cayma', 'Fatura', 'Paket', 'Şikayet', 'Genel'];
@@ -618,10 +986,10 @@ function analyzeLocally(transcript, customer) {
     Genel:    'Müşteri bilgilendirildi, gerekli işlemler gerçekleştirildi.',
   };
   const aksiyonlar = {
-    Cayma:    'Sadakat paketi veya tazminat teklifi yapılması önerilir.',
-    Fatura:   'Fatura itirazı varsa ilgili birime yönlendirilmeli, takip numarası verilmelidir.',
-    Şikayet:  'Teknik ekip geri dönüşü beklenmeli, 24 saat içinde müşteri aranmalıdır.',
-    Paket:    'Paket değişikliği yapılacaksa onay alınmalı ve yansıma süresi bildirilmelidir.',
+    Cayma:    'Müşteriyi yöneticiye bağla veya sadakat paketi teklifi için 24 saat içinde geri ara.',
+    Fatura:   'Fatura itirazını fatura birimine ilet, müşteriye takip numarası ver.',
+    Şikayet:  'Teknik destek talebi aç, 24 saat içinde müşteri aranacak şekilde not düş.',
+    Paket:    'Paket değişiklik talebini sisteme işle, yansıma süresini müşteriye bildir.',
     Genel:    '',
   };
 
@@ -663,8 +1031,15 @@ function CallFormModal({ lines, customer, notes, onSave, onClose, onScored }) {
           const prompt = `Sen bir çağrı merkezi analiz asistanısın. Aşağıdaki Türkçe görüşme transkriptini analiz et ve yalnızca JSON döndür.
 ${customer ? `Müşteri: ${customer.ad} | Segment: ${customer.segment} | Paket: ${customer.paket}` : ''}
 Transkript: """${maskedTranscript}"""
+
+onerilenAksiyon alanı için kurallar:
+- Temsilcinin çağrı SONRASI yapması gereken somut bir görevi yaz (örnek: "Müşteriyi 24 saat içinde ara", "Teknik ekibe talebi ilet", "Fatura itirazını ilgili birime yönlendir", "Sadakat paketi teklifi için müşteriyi yöneticiye bağla")
+- Rapor oluştur, formu doldur, görüşmeyi kaydet gibi şeyler YAZMA — bunlar zaten yapılıyor
+- Genel bilgi veya tavsiye değil, direkt eylem yaz
+- Gerçekten takip gerektiren bir sonraki adım yoksa boş bırak
+
 JSON formatı (başka hiçbir şey yazma):
-{"musteriTalebi":"Müşterinin 1 cümlelik talebi","yapilanIslem":"Yapılan işlem 1-2 cümle","sonuc":"Çözüldü|Beklemede|Yönlendirildi|Çözümsüz","onerilenAksiyon":"Sonraki adım (yoksa boş)","kategori":"Cayma|Fatura|Paket|Şikayet|Genel","oncelik":"Düşük|Orta|Yüksek"}`;
+{"musteriTalebi":"Müşterinin 1 cümlelik talebi","yapilanIslem":"Yapılan işlem 1-2 cümle","sonuc":"Çözüldü|Beklemede|Yönlendirildi|Çözümsüz","onerilenAksiyon":"Temsilcinin çağrı sonrası yapacağı somut eylem (yoksa boş bırak)","kategori":"Cayma|Fatura|Paket|Şikayet|Genel","oncelik":"Düşük|Orta|Yüksek"}`;
 
           const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -878,6 +1253,7 @@ export default function LiveAssistPage() {
   const [lines, setLines]                 = useState([]);
   const [history, setHistory]             = useState(getHistory);
   const [showHistory, setShowHistory]     = useState(false);
+  const [expandedPanel, setExpandedPanel] = useState(null);
   const recognitionRef                    = useRef(null);
   const demoTimersRef                     = useRef([]);
   const transcriptRef                     = useRef('');
@@ -998,8 +1374,8 @@ export default function LiveAssistPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-50 font-sans">
 
       {/* ── Header ── */}
-      <div className="border-b border-indigo-100 bg-white/80 backdrop-blur-md sticky top-0 z-20 shadow-sm shadow-indigo-50">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-4">
+      <div className="border-b border-indigo-100 bg-dark-800/60 backdrop-blur-md sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-safe-500 to-vox-600 flex items-center justify-center shadow-md shadow-safe-500/20">
               <Zap className="w-5 h-5 text-white" />
@@ -1240,8 +1616,18 @@ export default function LiveAssistPage() {
             {/* Akıllı paneller */}
             <AnimatePresence>
               {activePanels.map((p) => (
-                <motion.div key={p} layout>
+                <motion.div
+                  key={p}
+                  layout
+                  className="relative cursor-pointer group"
+                  onClick={() => setExpandedPanel(p)}
+                >
                   {panelComponents[p]}
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none">
+                    <div className="w-6 h-6 rounded-md bg-white/90 shadow-sm flex items-center justify-center border border-slate-200">
+                      <Maximize2 className="w-3 h-3 text-slate-500" />
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -1262,6 +1648,17 @@ export default function LiveAssistPage() {
       <AnimatePresence>
         {showHistory && (
           <HistoryPanel history={history} onClose={() => setShowHistory(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* ── Genişletilmiş Panel Modal ── */}
+      <AnimatePresence>
+        {expandedPanel && customer && (
+          <ExpandedModal
+            panelKey={expandedPanel}
+            customer={customer}
+            onClose={() => setExpandedPanel(null)}
+          />
         )}
       </AnimatePresence>
 

@@ -24,7 +24,7 @@ export const MOCK_CUSTOMERS = {
     sadakatPuani: 1240,
     riskSeviyesi: 'orta',
     acikSikayet: 0,
-    notlar: 'Geçen ay tarifesini sormuş.',
+    notlar: 'Son çağrısında tarifesi hakkında bilgi almış.',
   },
   '98765432109': {
     tc: '98765432109',
@@ -50,7 +50,7 @@ export const MOCK_CUSTOMERS = {
     sadakatPuani: 3870,
     riskSeviyesi: 'yüksek',
     acikSikayet: 1,
-    notlar: 'Şubat 2026 gecikmiş fatura. Şikayeti açık.',
+    notlar: 'Son çağrısında gecikmiş fatura nedeniyle şikayet açmış. Şikayet hâlâ açık durumda.',
   },
   '11223344556': {
     tc: '11223344556',
@@ -102,7 +102,7 @@ export const MOCK_CUSTOMERS = {
     sadakatPuani: 2100,
     riskSeviyesi: 'düşük',
     acikSikayet: 0,
-    notlar: 'Sadık müşteri, 22 ay.',
+    notlar: '22 aydır kesintisiz abone. Son çağrısında herhangi bir sorun bildirmemiş.',
   },
 };
 

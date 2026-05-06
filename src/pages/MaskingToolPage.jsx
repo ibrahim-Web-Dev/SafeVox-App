@@ -235,7 +235,7 @@ export default function MaskingToolPage() {
               </label>
               <div className="flex-1 min-h-[420px] bg-dark-800 border border-indigo-100 rounded-xl p-4 text-sm text-slate-700 font-mono leading-relaxed overflow-auto whitespace-pre-wrap">
                 {result?.maskedText ? (
-                  <span className="text-green-300">{result.maskedText}</span>
+                  <span className="text-green-700">{result.maskedText}</span>
                 ) : (
                   <span className="text-slate-400">
                     {hasInput ? 'İşleniyor...' : 'Maskeli metin burada görünecek'}
@@ -254,9 +254,9 @@ export default function MaskingToolPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-xs flex-wrap">
               <span className="text-slate-400">Renk anahtarı:</span>
-              <span className="px-2 py-0.5 rounded bg-red-500/20 border border-red-500/40 text-red-300">TC Kimlik</span>
-              <span className="px-2 py-0.5 rounded bg-yellow-500/20 border border-yellow-500/40 text-yellow-300">Telefon</span>
-              <span className="px-2 py-0.5 rounded bg-blue-500/20 border border-blue-500/40 text-blue-300">İsim</span>
+              <span className="px-2 py-0.5 rounded bg-red-100 border border-red-300 text-red-700">TC Kimlik</span>
+              <span className="px-2 py-0.5 rounded bg-yellow-100 border border-yellow-300 text-yellow-800">Telefon</span>
+              <span className="px-2 py-0.5 rounded bg-blue-100 border border-blue-300 text-blue-700">İsim</span>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -320,11 +320,11 @@ export default function MaskingToolPage() {
                           className="flex items-center gap-4 px-5 py-3 text-sm hover:bg-white/3 transition-colors"
                         >
                           <TypeBadge type={f.type} label={f.label} />
-                          <code className="text-red-400 bg-red-500/10 px-2 py-0.5 rounded text-xs font-mono flex-1">
+                          <code className="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-xs font-mono flex-1">
                             {f.original}
                           </code>
                           <span className="text-slate-400">→</span>
-                          <code className="text-green-400 bg-green-500/10 px-2 py-0.5 rounded text-xs font-mono flex-1">
+                          <code className="text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded text-xs font-mono flex-1">
                             {f.masked}
                           </code>
                         </div>
@@ -353,9 +353,9 @@ export default function MaskingToolPage() {
 
 function OptionToggle({ icon, label, active, color, onClick }) {
   const colorMap = {
-    red: active ? 'bg-red-500/20 border-red-500/40 text-red-300' : 'bg-indigo-50/60 border-indigo-100 text-slate-400',
-    yellow: active ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-300' : 'bg-indigo-50/60 border-indigo-100 text-slate-400',
-    blue: active ? 'bg-blue-500/20 border-blue-500/40 text-blue-300' : 'bg-indigo-50/60 border-indigo-100 text-slate-400',
+    red: active ? 'bg-red-100 border-red-300 text-red-700' : 'bg-indigo-50/60 border-indigo-100 text-slate-400',
+    yellow: active ? 'bg-yellow-100 border-yellow-300 text-yellow-800' : 'bg-indigo-50/60 border-indigo-100 text-slate-400',
+    blue: active ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-indigo-50/60 border-indigo-100 text-slate-400',
   };
   return (
     <button
@@ -370,10 +370,10 @@ function OptionToggle({ icon, label, active, color, onClick }) {
 
 function StatCard({ icon, label, value, color, highlight }) {
   const colorMap = {
-    purple: 'text-vox-400 bg-vox-500/10 border-vox-500/20',
-    red: 'text-red-400 bg-red-500/10 border-red-500/20',
-    yellow: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
-    blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    purple: 'text-vox-600 bg-vox-500/10 border-vox-500/20',
+    red: 'text-red-600 bg-red-50 border-red-200',
+    yellow: 'text-yellow-700 bg-yellow-50 border-yellow-200',
+    blue: 'text-blue-600 bg-blue-50 border-blue-200',
   };
   return (
     <div className={`rounded-xl border p-4 ${colorMap[color]} ${highlight ? 'ring-1 ring-vox-500/20' : ''}`}>
@@ -388,9 +388,9 @@ function StatCard({ icon, label, value, color, highlight }) {
 
 function TypeBadge({ type, label }) {
   const map = {
-    TC: 'bg-red-500/20 text-red-300 border-red-500/40',
-    PHONE: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
-    NAME: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+    TC: 'bg-red-100 text-red-700 border-red-300',
+    PHONE: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    NAME: 'bg-blue-100 text-blue-700 border-blue-300',
   };
   return (
     <span className={`px-2 py-0.5 rounded border text-xs font-medium ${map[type]}`}>

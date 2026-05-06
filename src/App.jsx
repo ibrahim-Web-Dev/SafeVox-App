@@ -1,26 +1,16 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mic, ShieldCheck, Activity, Brain, Users, GraduationCap, LogOut, ShieldAlert, Zap } from 'lucide-react';
-import SpeechPage from './pages/SpeechPage';
-import MaskingToolPage from './pages/MaskingToolPage';
-import EmotionPage from './pages/EmotionPage';
+import { Activity, Users, GraduationCap, LogOut, Zap } from 'lucide-react';
 import EmployeesPage from './pages/EmployeesPage';
 import CoachPage from './pages/CoachPage';
-import AlertsPage from './pages/AlertsPage';
-import SubtitleMockPage from './pages/SubtitleMockPage';
 import LoginPage from './pages/LoginPage';
 import EmployeeView from './pages/EmployeeView';
 import LiveAssistPage from './pages/LiveAssistPage';
 
 const MODULES = [
-  { id: 'liveassist', icon: Zap,           label: 'Live Assist',     sub: 'NEW',   color: 'from-emerald-500 to-teal-500' },
-  { id: 'speech',    icon: Mic,           label: 'Ses Tanıma',      sub: 'STT',   color: 'from-red-500 to-orange-500' },
-  { id: 'masking',   icon: ShieldCheck,   label: 'KVKK Maskeleme',  sub: 'PII',   color: 'from-safe-500 to-vox-600' },
-  { id: 'emotion',   icon: Brain,         label: 'Duygu Analizi',   sub: 'AI',    color: 'from-vox-500 to-purple-600' },
-  { id: 'employees', icon: Users,         label: 'Çalışan Takibi',  sub: 'HR',    color: 'from-blue-500 to-cyan-500' },
-  { id: 'coach',     icon: GraduationCap, label: 'Dijital Koç',     sub: 'BETA',  color: 'from-blue-500 to-yellow-400' },
-  { id: 'alerts',    icon: ShieldAlert,   label: 'Risk Uyarıları',  sub: 'LIVE',  color: 'from-red-500 to-orange-600' },
-  { id: 'subtitle',  icon: Mic,           label: 'Canlı Altyazı',   sub: 'DEMO',  color: 'from-teal-500 to-cyan-500' },
+  { id: 'liveassist', icon: Zap,           label: 'Live Assist',    sub: 'NEW',  color: 'from-emerald-500 to-teal-500' },
+  { id: 'coach',      icon: GraduationCap, label: 'Dijital Koç',    sub: 'BETA', color: 'from-blue-500 to-yellow-400' },
+  { id: 'employees',  icon: Users,         label: 'Çalışan Takibi', sub: 'HR',   color: 'from-blue-500 to-cyan-500' },
 ];
 
 export default function App() {
@@ -92,7 +82,6 @@ export default function App() {
             })}
           </div>
 
-          {/* Pipeline göstergesi + çıkış */}
           <button
             onClick={handleLogout}
             className="ml-auto flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400 transition px-2 py-1 rounded-lg hover:bg-red-500/10"
@@ -100,34 +89,14 @@ export default function App() {
             <LogOut className="w-3.5 h-3.5" />
             Çıkış
           </button>
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className={activeModule === 'liveassist'? 'text-emerald-500 font-medium' : ''}>Live</span>
-            <span>→</span>
-            <span className={activeModule === 'speech'    ? 'text-orange-400 font-medium' : ''}>STT</span>
-            <span>→</span>
-            <span className={activeModule === 'masking'   ? 'text-safe-400 font-medium'   : ''}>KVKK</span>
-            <span>→</span>
-            <span className={activeModule === 'emotion'   ? 'text-vox-400 font-medium'    : ''}>Duygu</span>
-            <span>→</span>
-            <span className={activeModule === 'employees' ? 'text-blue-400 font-medium'   : ''}>Takip</span>
-            <span>→</span>
-            <span className={activeModule === 'coach'     ? 'text-yellow-400 font-medium'  : ''}>Koç</span>
-            <span>→</span>
-            <span className={activeModule === 'alerts'    ? 'text-red-400 font-medium'     : ''}>Uyarı</span>
-          </div>
         </div>
       </header>
 
       {/* Aktif modül */}
       <main className="flex-1">
         {activeModule === 'liveassist' && <LiveAssistPage />}
-        {activeModule === 'speech'    && <SpeechPage />}
-        {activeModule === 'masking'   && <MaskingToolPage />}
-        {activeModule === 'emotion'   && <EmotionPage />}
-        {activeModule === 'employees' && <EmployeesPage />}
-        {activeModule === 'coach'     && <CoachPage />}
-        {activeModule === 'alerts'    && <AlertsPage />}
-        {activeModule === 'subtitle'  && <SubtitleMockPage />}
+        {activeModule === 'coach'      && <CoachPage />}
+        {activeModule === 'employees'  && <EmployeesPage />}
       </main>
     </div>
   );

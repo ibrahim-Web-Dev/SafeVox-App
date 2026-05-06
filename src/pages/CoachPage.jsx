@@ -1,40 +1,79 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, RotateCcw, GraduationCap, ChevronRight, Star, Volume2, VolumeX, Loader2,
-  CheckCircle2, Circle, BookOpen, ShieldCheck, Brain, Zap, Users, Award } from 'lucide-react';
-import { evaluateWithGemini } from '../utils/coachEvaluator';
+  CheckCircle2, Circle, BookOpen, ShieldCheck, Brain, Zap, Users, Award, Sparkles } from 'lucide-react';
 import { SplineScene } from '../components/ui/SplineScene';
+import { VoxeraHead } from './VoxeraPage';
 
-// ── Senaryo Veritabanı ─────────────────────────────────────────────────────────
-const SCENARIOS = [
+const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
+
+// ── Yardımcı: Şimdiki saat ───────────────────────────────────────────────────
+const nowStr = () => new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+// ── Voxera Senaryoları (genel müşteri tipleri) ────────────────────────────────
+const VOXERA_SCENARIOS = [
   {
-    id: 'acilis',
-    label: 'Açılış',
-    emoji: '👋',
-    teknocanMesaj: 'Merhaba! Ben Teknocan, dijital koçun. Açılış cümlesini benimle pratik yapalım. Hazır mısın?',
-    beklenen: 'Merhaba, Türkcell müşteri hizmetleri, [İsmin] konuşuyor. Size nasıl yardımcı olabilirim?',
-    ipucu: 'Merhaba diyerek başla → Türkcell & ismini söyle → nasıl yardımcı olabileceğini sor',
-    anahtarlar: ['merhaba', 'türkcell', 'müşteri', 'yardımcı'],
+    id: 'sinirli',
+    label: 'Sinirli Müşteri',
+    emoji: '😤',
+    difficulty: 'Orta',
+    diffColor: 'text-amber-700 bg-amber-100 border-amber-200',
+    desc: 'Faturasına haksız yere ücret yansımış, oldukça sinirli bir müşteri.',
+    mascotMesaj: 'Sinirli müşteri senaryosu! Empati kur, sakin kal ve çözüm üret. Hazır mısın?',
+    startMsg: 'Bak, bu ay faturama 150 TL ekstra çıkmış — bunu kimse açıklamadı. Çok sinirli hissediyorum, ne olduğunu anlatın!',
+    systemPrompt: `Sen sinirli bir müşterisin. Faturana haksız 150 TL ek ücret yansımış. Başlangıçta çok öfkeli ve aceleci davran, sözü kes, "bunu daha önce de söyledim" gibi şeyler söyle. Temsilci seni gerçekten dinleyip empati kurarsa ve somut çözüm sunarsa yavaş yavaş sakinleş. Türkçe konuş, kısa cümleler kullan. Temsilci rolünü üstlenme, sadece müşteri ol.`,
   },
   {
-    id: 'itiraz',
-    label: 'İtiraz Karşılama',
-    emoji: '🤝',
-    teknocanMesaj: 'Şikayet eden bir müşteri var! Sakin ve çözüm odaklı bir cevap ver, deneyelim.',
-    beklenen: 'Yaşadığınız durumu anlıyorum, sizi dinliyorum. Bu konuyu çözmek için elimden geleni yapacağım.',
-    ipucu: 'Empati kur → dinlediğini göster → çözüm odaklı ol',
-    anahtarlar: ['anlıyorum', 'dinliyorum', 'çözmek', 'yardımcı'],
+    id: 'sakin',
+    label: 'Sakin Müşteri',
+    emoji: '😊',
+    difficulty: 'Kolay',
+    diffColor: 'text-emerald-700 bg-emerald-100 border-emerald-200',
+    desc: 'Merak eden, kibarca soru soran, kolay ikna edilebilir bir müşteri.',
+    mascotMesaj: 'Sakin ve meraklı bir müşteri var. İyi bir fırsat — çözüm sun ve upsell yap!',
+    startMsg: 'Merhaba, internet paketimi değiştirmek istiyorum ama hangisinin daha uygun olduğuna karar veremedim, yardımcı olabilir misiniz?',
+    systemPrompt: `Sen kibarca soru soran, açık fikirli bir müşterisin. Sakin, nazik ve meraklısın. Temsilcinin önerilerini dinle, mantıklı sorular sor. Çok hızlı ikna olma ama ısrarcı da olma. Türkçe konuş.`,
   },
   {
-    id: 'kapanis',
-    label: 'Kapanış',
-    emoji: '✅',
-    teknocanMesaj: 'Görüşmeyi kapatma zamanı! Profesyonel bir kapanış cümlesi söyle bakalım.',
-    beklenen: 'Başka bir konuda yardımcı olabilir miyim? Türkcell\'i tercih ettiğiniz için teşekkür ederiz. İyi günler dilerim.',
-    ipucu: 'Başka yardım teklif et → teşekkür et → iyi dilek',
-    anahtarlar: ['teşekkür', 'iyi günler', 'yardımcı', 'türkcell'],
+    id: 'zorlu',
+    label: 'Zorlu Müşteri',
+    emoji: '😠',
+    difficulty: 'Zor',
+    diffColor: 'text-red-700 bg-red-100 border-red-200',
+    desc: 'Her şeye itiraz eden, hiçbir çözümü beğenmeyen, sabır isteyen müşteri.',
+    mascotMesaj: 'En zorlu müşteri tipi! Sabrını koru, profesyonel kal. Bu zor ama üstesinden gelebilirsin!',
+    startMsg: 'Geçen ay da aradım, çözülmedi. Ondan önce de aradım, yine çözülmedi. Şimdi de bir şey değişmeyecek biliyorum ama yine de arıyorum.',
+    systemPrompt: `Sen çok zorlu bir müşterisin. Daha önce birçok kez aradın ama sorunun çözülmediğini düşünüyorsun. Her çözüm önerisine "evet ama", "bunu daha önce de denedim", "boşuna konuşuyoruz" gibi tepkiler ver. Asla hemen ikna olma. Temsilci çok somut, adım adım bir plan sunarsa biraz yumuşa. Türkçe konuş.`,
+  },
+  {
+    id: 'hayalkiriklig',
+    label: 'Hayal Kırıklığı',
+    emoji: '😢',
+    difficulty: 'Orta',
+    diffColor: 'text-amber-700 bg-amber-100 border-amber-200',
+    desc: 'Hizmet kesintisi yaşayan, hayal kırıklığına uğramış, üzgün bir müşteri.',
+    mascotMesaj: 'Hayal kırıklığına uğramış bir müşteri. Empati çok önemli burada — gerçekten hissettir!',
+    startMsg: 'Üç gündür internet yok. Evden çalışıyorum, çocuğum online derslerine giremiyor. Çok zor bir durumdayız.',
+    systemPrompt: `Sen 3 gündür yaşadığın internet kesintisinden çok üzgün ve yorgun bir müşterisin. Sinirli değilsin ama çok mağdursun. Duygusal ol — "çocuğum ders yapamıyor", "işimi kaybedebilirim" gibi söyle. Temsilci samimi empati kurarsa ve net bir çözüm süresi verirse rahatla. Türkçe konuş.`,
+  },
+  {
+    id: 'kararsiz',
+    label: 'Kararsız Müşteri',
+    emoji: '🤔',
+    difficulty: 'Kolay',
+    diffColor: 'text-emerald-700 bg-emerald-100 border-emerald-200',
+    desc: 'Karar vermekte zorlanan, alternatifler arasında gidip gelen müşteri.',
+    mascotMesaj: 'Kararsız müşteri! Yönlendir, güven ver ve doğru seçeneğe yönel. Haydi!',
+    startMsg: 'Şimdi şöyle, hem bu pakete bakıyorum hem şu pakete... bilmiyorum hangisi daha iyi. Bir de rakip firma var ama onlar da pahalı gibi...',
+    systemPrompt: `Sen karar vermekte zorlanan bir müşterisin. Sürekli "ama şu ne olacak", "peki ya bu", "bilmiyorum" diyorsun. Temsilci net karşılaştırma yapar ve sana özel bir öneri sunarsa kararını ver. Türkçe konuş.`,
   },
 ];
+
+// Teknocan aynı senaryoları kullanır — karakter değişir, içerik aynı kalır
+const TEKNOCAN_SCENARIOS = VOXERA_SCENARIOS.map(s => ({
+  ...s,
+  mascotMesaj: s.mascotMesaj.replace('Ben Voxera, AI koçun', 'Ben Teknocan, dijital koçun'),
+}));
 
 // ── TTS ────────────────────────────────────────────────────────────────────────
 function speak(text, onStart, onEnd) {
@@ -498,36 +537,49 @@ function ScoreStars({ score }) {
 
 // ── Ana Sayfa ─────────────────────────────────────────────────────────────────
 export default function CoachPage() {
-  const [activeScenario, setActiveScenario] = useState(SCENARIOS[0]);
-  const [mascotState, setMascotState]       = useState('idle');
-  const [isTalking, setIsTalking]           = useState(false);
-  const [bubbleText, setBubbleText]         = useState('');
-  const [bubbleVisible, setBubbleVisible]   = useState(false);
-  // isRecording kaldırıldı — sessionState === 'recording' kullanılıyor
-  const [transcript, setTranscript]         = useState('');
-  const [sessionState, setSessionState]     = useState('intro');
-  const [score, setScore]                   = useState(null);
-  const [evalResult, setEvalResult]         = useState(null);
-  const [isEvaluating, setIsEvaluating]     = useState(false);
-  const [ttsEnabled, setTtsEnabled]         = useState(true);
+  const [activeMascot, setActiveMascot]   = useState('voxera');
+  const SCENARIOS = activeMascot === 'voxera' ? VOXERA_SCENARIOS : TEKNOCAN_SCENARIOS;
+  const [activeScenario, setActiveScenario] = useState(VOXERA_SCENARIOS[0]);
 
-  const recognitionRef = useRef(null);
-  const bubbleTimerRef = useRef(null);
+  // Maskot animasyon state'leri
+  const [mascotState, setMascotState]     = useState('idle');
+  const [isTalking, setIsTalking]         = useState(false);
+  const [bubbleText, setBubbleText]       = useState('');
+  const [bubbleVisible, setBubbleVisible] = useState(false);
+  const [ttsEnabled, setTtsEnabled]       = useState(true);
 
-  const teknocanSpeak = useCallback((text, nextState = 'idle') => {
+  // Simülasyon state'leri
+  // 'idle' | 'customer_speaking' | 'agent_turn' | 'recording' | 'ai_thinking' | 'ended'
+  const [simState, setSimState]           = useState('idle');
+  const [chatHistory, setChatHistory]     = useState([]);
+  const [agentInput, setAgentInput]       = useState('');
+  const [isRecording, setIsRecording]     = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [evalResult, setEvalResult]       = useState(null);
+
+  const recognitionRef      = useRef(null);
+  const bubbleTimerRef      = useRef(null);
+  const chatBottomRef       = useRef(null);
+  const liveTranscriptRef   = useRef('');
+  const sendAgentMsgRef     = useRef(null);
+  const startRecordingRef   = useRef(null);
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory, simState]);
+
+  // Maskot konuşma balonu
+  const mascotSpeak = useCallback((text, nextState = 'idle') => {
     setBubbleText(text);
     setBubbleVisible(true);
     clearTimeout(bubbleTimerRef.current);
-
     if (!ttsEnabled) {
       setMascotState(nextState);
       bubbleTimerRef.current = setTimeout(() => setBubbleVisible(false), 4500);
       return;
     }
-
-    speak(
-      text,
-      () => { setIsTalking(true); },
+    speak(text,
+      () => setIsTalking(true),
       () => {
         setIsTalking(false);
         setMascotState(nextState);
@@ -536,133 +588,201 @@ export default function CoachPage() {
     );
   }, [ttsEnabled]);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      teknocanSpeak(activeScenario.teknocanMesaj, 'idle');
-      setSessionState('ready');
-    }, 700);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeScenario]);
-
+  // Senaryo / maskot değişimi
   const changeScenario = (s) => {
-    stopRecording();
-    window.speechSynthesis?.cancel();
-    setTranscript('');
-    setScore(null);
-    setEvalResult(null);
-    setIsTalking(false);
+    stopSim();
     setActiveScenario(s);
-    setSessionState('intro');
+  };
+  const switchMascot = (m) => {
+    stopSim();
+    setActiveMascot(m);
+    const list = m === 'voxera' ? VOXERA_SCENARIOS : TEKNOCAN_SCENARIOS;
+    setActiveScenario(list[0]);
   };
 
-  const startRecording = useCallback(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { teknocanSpeak('Chrome kullanman gerekiyor!', 'sad'); return; }
+  // Müşteri sesini TTS ile çal; bitince agent_turn'e geç
+  const speakCustomerTurn = useCallback((text, onDone) => {
+    setIsTalking(true);
+    if (!ttsEnabled) { setIsTalking(false); onDone(); return; }
+    speak(text, () => {}, () => { setIsTalking(false); onDone(); });
+  }, [ttsEnabled]);
 
-    const rec = new SR();
-    rec.lang = 'tr-TR';
-    rec.continuous = false;
-    rec.interimResults = true;
-
-    rec.onresult = (e) => {
-      setTranscript(Array.from(e.results).map((r) => r[0].transcript).join(' '));
-    };
-    rec.onend = () => {
-      setMascotState('thinking');
-      teknocanSpeak('Bir saniye, Gemini ile değerlendiriyorum...', 'thinking');
-      setTimeout(() => evaluateTranscript(), 800);
-    };
-    rec.onerror = () => {
-      teknocanSpeak('Sesi duyamadım, tekrar dene!', 'sad');
-      setSessionState('ready');
-    };
-
-    recognitionRef.current = rec;
-    rec.start();
-    setTranscript('');
-    setScore(null);
-    setSessionState('recording');
-    setMascotState('listening');
-    setBubbleVisible(false);
+  // Simülasyonu başlat
+  const startSim = () => {
     window.speechSynthesis?.cancel();
-    setIsTalking(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teknocanSpeak]);
-
-  const stopRecording = useCallback(() => {
     recognitionRef.current?.stop();
-  }, []);
-
-  const evaluateTranscript = useCallback(async () => {
-    if (!transcript.trim()) {
-      teknocanSpeak('Hiçbir şey söylemedin! Tekrar dene.', 'sad');
-      setSessionState('ready');
-      return;
-    }
-
-    setIsEvaluating(true);
-
-    try {
-      const result = await evaluateWithGemini(transcript, activeScenario);
-      const final  = Math.min(100, Math.max(0, result.puan));
-
-      setScore(final);
-      setEvalResult(result);
-      setSessionState('result');
-      setIsEvaluating(false);
-
-      const mesaj = result.mesaj || (
-        final >= 75 ? 'Harika! Mükemmel bir performans, bravo!' :
-        final >= 40 ? 'Fena değil! Biraz daha pratik yaparsan mükemmel.' :
-                      'Daha fazla pratik yapmalısın. Birlikte tekrar deneyelim!'
-      );
-
-      if (final >= 75)       { setMascotState('happy'); teknocanSpeak(mesaj, 'happy'); }
-      else if (final >= 40)  { setMascotState('idle');  teknocanSpeak(mesaj, 'idle');  }
-      else                   { setMascotState('sad');   teknocanSpeak(mesaj, 'sad');   }
-
-    } catch {
-      // Gemini başarısız olursa yerel değerlendirmeye dön
-      setIsEvaluating(false);
-      const lower  = transcript.toLowerCase();
-      const found  = activeScenario.anahtarlar.filter((k) => lower.includes(k));
-      const base   = Math.round((found.length / activeScenario.anahtarlar.length) * 100);
-      const bonus  = lower.length > 25 ? 10 : lower.length > 12 ? 5 : 0;
-      const final  = Math.min(100, base + bonus);
-      setScore(final);
-      setEvalResult({ bulunanlar: found, eksikler: activeScenario.anahtarlar.filter(k => !found.includes(k)), detay: 'Yerel değerlendirme (Gemini erişilemedi)' });
-      setSessionState('result');
-      if (final >= 75)      { setMascotState('happy'); teknocanSpeak('Harika! Mükemmel bir performans, bravo!', 'happy'); }
-      else if (final >= 40) { setMascotState('idle');  teknocanSpeak('Fena değil! Biraz daha pratik yaparsan mükemmel.', 'idle'); }
-      else                  { setMascotState('sad');   teknocanSpeak('Daha fazla pratik yapmalısın. Birlikte tekrar deneyelim!', 'sad'); }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transcript, activeScenario, teknocanSpeak]);
-
-  const reset = () => {
-    stopRecording();
-    window.speechSynthesis?.cancel();
-    setTranscript('');
-    setScore(null);
+    const opening = { role: 'customer', text: activeScenario.startMsg, time: nowStr() };
+    setChatHistory([opening]);
+    setSimState('customer_speaking');
     setEvalResult(null);
-    setIsTalking(false);
-    setSessionState('ready');
+    setAgentInput('');
+    setLiveTranscript('');
+    liveTranscriptRef.current = '';
+    setMascotState('listening');
+    setBubbleText(activeScenario.mascotMesaj);
+    setBubbleVisible(true);
+    clearTimeout(bubbleTimerRef.current);
+    bubbleTimerRef.current = setTimeout(() => setBubbleVisible(false), 6000);
+
+    speakCustomerTurn(activeScenario.startMsg, () => {
+      setSimState('agent_turn');
+      setMascotState('idle');
+    });
+  };
+
+  // Simülasyonu durdur / sıfırla
+  const stopSim = () => {
+    recognitionRef.current?.stop();
+    window.speechSynthesis?.cancel();
+    setSimState('idle');
+    setChatHistory([]);
+    setEvalResult(null);
+    setAgentInput('');
+    setIsRecording(false);
+    setLiveTranscript('');
     setMascotState('idle');
     setBubbleVisible(false);
+    setIsTalking(false);
   };
 
-  useEffect(() => () => {
-    stopRecording();
-    window.speechSynthesis?.cancel();
-    clearTimeout(bubbleTimerRef.current);
-  }, [stopRecording]);
+  // Temsilci mesajı gönder → AI müşteri cevabı al
+  const sendAgentMessage = useCallback(async (text) => {
+    const trimmed = text?.trim();
+    if (!trimmed || simState === 'idle' || simState === 'customer_speaking' || simState === 'ai_thinking' || simState === 'ended') return;
 
-  const scoreColor = score === null ? '' :
-    score >= 75 ? 'text-green-400' : score >= 40 ? 'text-yellow-400' : 'text-red-400';
-  const scoreBg = score === null ? '' :
-    score >= 75 ? 'border-green-500/30 bg-green-500/8' :
-    score >= 40 ? 'border-yellow-500/30 bg-yellow-500/8' : 'border-red-500/30 bg-red-500/8';
+    const agentMsg = { role: 'agent', text: trimmed, time: nowStr() };
+    const newHistory = [...chatHistory, agentMsg];
+    setChatHistory(newHistory);
+    setAgentInput('');
+    setLiveTranscript('');
+    liveTranscriptRef.current = '';
+    setSimState('ai_thinking');
+    setMascotState('thinking');
+
+    try {
+      if (!GROQ_KEY) throw new Error('no key');
+
+      const messages = [
+        { role: 'system', content: activeScenario.systemPrompt },
+        ...newHistory.map(m => ({
+          role: m.role === 'customer' ? 'assistant' : 'user',
+          content: m.text,
+        })),
+      ];
+
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.75, max_tokens: 120 }),
+      });
+      const data = await res.json();
+      const customerReply = data.choices?.[0]?.message?.content?.trim() || 'Anlamadım, tekrar eder misiniz?';
+
+      const custMsg = { role: 'customer', text: customerReply, time: nowStr() };
+      setChatHistory(prev => [...prev, custMsg]);
+      setSimState('customer_speaking');
+      setMascotState('listening');
+      // Müşteri cevabını sesli oku, bitince temsilci sırası
+      speakCustomerTurn(customerReply, () => {
+        setSimState('agent_turn');
+        setMascotState('idle');
+        setTimeout(() => startRecordingRef.current?.(), 600);
+      });
+    } catch {
+      setChatHistory(prev => [...prev, { role: 'customer', text: '(Bağlantı hatası — API anahtarını kontrol et)', time: nowStr() }]);
+      setSimState('agent_turn');
+      setMascotState('sad');
+    }
+  }, [simState, chatHistory, activeScenario, speakCustomerTurn]);
+
+  // Simülasyonu bitir → değerlendirme
+  const endSim = useCallback(async () => {
+    if (chatHistory.length < 2) { stopSim(); return; }
+    setSimState('ai_thinking');
+    setMascotState('thinking');
+    mascotSpeak('Görüşmeyi değerlendiriyorum...', 'thinking');
+
+    const transcript = chatHistory.map(m =>
+      `${m.role === 'customer' ? 'Müşteri' : 'Temsilci'}: ${m.text}`
+    ).join('\n');
+
+    try {
+      const evalPrompt = `Aşağıdaki simülasyon görüşmesinde temsilcinin performansını değerlendir.
+Senaryo: ${activeScenario.label} — ${activeScenario.desc}
+Görüşme:\n${transcript}
+Yalnızca JSON döndür:
+{"empati":0-25,"cozumOdaklilik":0-25,"iletisim":0-25,"profesyonellik":0-25,"toplam":0-100,"geri_bildirim":"2-3 cümle Türkçe geri bildirim"}`;
+
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: evalPrompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.2,
+        }),
+      });
+      const data = await res.json();
+      const parsed = JSON.parse(data.choices[0].message.content);
+      setEvalResult(parsed);
+      setSimState('ended');
+
+      const total = parsed.toplam ?? 0;
+      if (total >= 75) { setMascotState('happy'); mascotSpeak('Harika performans! Gerçek bir profesyonel gibi yönettin!', 'happy'); }
+      else if (total >= 40) { setMascotState('idle'); mascotSpeak('Fena değil! Birkaç noktayı geliştirirsen mükemmel olacak.', 'idle'); }
+      else { setMascotState('sad'); mascotSpeak('Bu senaryo zordu. Tekrar dene, her seferinde daha iyi olacaksın!', 'sad'); }
+    } catch {
+      setEvalResult({ empati: 0, cozumOdaklilik: 0, iletisim: 0, profesyonellik: 0, toplam: 0, geri_bildirim: 'Değerlendirme yapılamadı (API hatası).' });
+      setSimState('ended');
+      setMascotState('sad');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatHistory, activeScenario, mascotSpeak]);
+
+  // Mikrofon kaydı
+  const startRecording = useCallback(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { mascotSpeak('Chrome kullanman gerekiyor!', 'sad'); return; }
+    const rec = new SR();
+    rec.lang = 'tr-TR'; rec.continuous = false; rec.interimResults = true;
+    rec.onresult = (e) => {
+      const t = Array.from(e.results).map(r => r[0].transcript).join(' ');
+      setLiveTranscript(t);
+      liveTranscriptRef.current = t;
+    };
+    rec.onend = () => {
+      setIsRecording(false);
+      const t = liveTranscriptRef.current.trim();
+      if (t) {
+        sendAgentMsgRef.current?.(t);
+        setLiveTranscript('');
+        liveTranscriptRef.current = '';
+      } else {
+        setSimState('agent_turn');
+      }
+    };
+    rec.onerror = () => {
+      setIsRecording(false);
+      setSimState('agent_turn');
+      mascotSpeak('Sesi duyamadım, tekrar dene!', 'sad');
+    };
+    recognitionRef.current = rec;
+    rec.start();
+    setIsRecording(true);
+    setSimState('recording');
+    setLiveTranscript('');
+    liveTranscriptRef.current = '';
+    setMascotState('listening');
+  }, [mascotSpeak]);
+
+  // Ref'leri güncelle (circular dep'i kırmak için)
+  sendAgentMsgRef.current   = sendAgentMessage;
+  startRecordingRef.current = startRecording;
+
+  const stopRecording = useCallback(() => { recognitionRef.current?.stop(); }, []);
+
+  useEffect(() => () => { stopRecording(); window.speechSynthesis?.cancel(); clearTimeout(bubbleTimerRef.current); }, [stopRecording]);
 
   return (
     <div className="min-h-screen bg-dark-900 text-slate-800 font-sans pb-16">
@@ -670,31 +790,63 @@ export default function CoachPage() {
       {/* Header */}
       <div className="border-b border-indigo-100 bg-dark-800/60 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-yellow-400
-                          flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <GraduationCap className="w-5 h-5 text-white" />
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 ${
+            activeMascot === 'voxera'
+              ? 'bg-gradient-to-br from-violet-500 to-purple-700 shadow-violet-500/20'
+              : 'bg-gradient-to-br from-blue-500 to-yellow-400 shadow-blue-500/20'
+          }`}>
+            {activeMascot === 'voxera'
+              ? <Sparkles className="w-5 h-5 text-white" />
+              : <GraduationCap className="w-5 h-5 text-white" />}
           </div>
           <div>
             <h1 className="text-lg font-display font-bold text-slate-800 leading-none">Dijital Koç</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Teknocan · AI destekli temsilci eğitimi</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {activeMascot === 'voxera' ? 'Voxi · SafeVox AI koç' : 'Teknocan · Türkcell\'e özel eğitim'}
+            </p>
           </div>
+
+          {/* Mascot switcher */}
+          <div className="mx-auto flex items-center bg-indigo-50/80 border border-indigo-100 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => switchMascot('voxera')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                activeMascot === 'voxera'
+                  ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md shadow-violet-400/30'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              Voxi
+            </button>
+            <button
+              onClick={() => switchMascot('teknocan')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                activeMascot === 'teknocan'
+                  ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900 shadow-md shadow-yellow-400/30'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Teknocan
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/30 font-mono">TC</span>
+            </button>
+          </div>
+
           <div className="ml-auto flex items-center gap-3">
             <button
               onClick={() => { setTtsEnabled((p) => !p); window.speechSynthesis?.cancel(); setIsTalking(false); }}
               title={ttsEnabled ? 'Sesi kapat' : 'Sesi aç'}
               className={`p-2 rounded-lg border transition-all ${
                 ttsEnabled
-                  ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400'
+                  ? activeMascot === 'voxera'
+                    ? 'bg-violet-500/15 border-violet-500/30 text-violet-500'
+                    : 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400'
                   : 'bg-indigo-50/60 border-indigo-100 text-slate-400'
               }`}
             >
               {ttsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <motion.div className="w-2 h-2 rounded-full bg-blue-400"
-                animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
-              <span className="text-xs text-blue-300 font-medium">Eğitim Modu</span>
-            </div>
           </div>
         </div>
       </div>
@@ -702,13 +854,15 @@ export default function CoachPage() {
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Senaryo Seçici */}
-        <div className="flex items-center gap-2 mb-8">
+        <div className="flex items-center gap-2 mb-8 flex-wrap">
           {SCENARIOS.map((s) => (
             <button key={s.id} onClick={() => changeScenario(s)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
                           transition-all duration-200 border ${
                 activeScenario.id === s.id
-                  ? 'bg-yellow-400/15 border-yellow-400/40 text-yellow-300'
+                  ? activeMascot === 'voxera'
+                    ? 'bg-violet-500/15 border-violet-500/40 text-violet-600'
+                    : 'bg-yellow-400/15 border-yellow-400/40 text-yellow-600'
                   : 'bg-dark-800/60 border-indigo-100 text-slate-400 hover:text-slate-600 hover:border-indigo-200'
               }`}
             >
@@ -717,161 +871,332 @@ export default function CoachPage() {
           ))}
         </div>
 
-        <div className="grid md:grid-cols-[280px_1fr] gap-8 items-start">
+        <div className="grid md:grid-cols-[340px_1fr] gap-8 items-start">
 
-          {/* Sol: Teknocan */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="min-h-[80px] flex items-end w-full">
-              <SpeechBubble text={bubbleText} visible={bubbleVisible} />
-            </div>
-
-            {/* Zemin parlaması */}
+          {/* Sol: Maskot */}
+          <div className="flex flex-col items-center gap-2 md:sticky md:top-14 -mt-6">
             <div className="relative flex justify-center">
-              <div className="absolute bottom-4 w-36 h-8 bg-yellow-400/20 blur-2xl rounded-full" />
-              <TeknocanSVG state={mascotState} isTalking={isTalking} />
+              {/* Konuşma balonu — karakterin üstüne overlay */}
+              <div className="absolute -top-24 left-0 w-full flex items-end z-10">
+                <SpeechBubble text={bubbleText} visible={bubbleVisible} />
+              </div>
+
+              <AnimatePresence mode="wait">
+                {activeMascot === 'voxera' ? (
+                  <motion.div key="voxera"
+                    initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.25 }} className="relative">
+                    <div className="absolute bottom-4 w-56 h-10 bg-violet-500/20 blur-2xl rounded-full left-1/2 -translate-x-1/2" />
+                    <VoxeraHead state={mascotState} isTalking={isTalking} size={380} />
+                  </motion.div>
+                ) : (
+                  <motion.div key="teknocan"
+                    initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.25 }} className="relative">
+                    <div className="absolute bottom-4 w-36 h-8 bg-yellow-400/20 blur-2xl rounded-full" />
+                    <TeknocanSVG state={mascotState} isTalking={isTalking} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="text-center">
-              <p className="text-sm font-bold text-slate-800">Teknocan</p>
-              <p className="text-xs text-slate-400">Dijital Koç · Türkcell</p>
+              <p className="text-sm font-bold text-slate-800">
+                {activeMascot === 'voxera' ? 'Voxi' : 'Teknocan'}
+              </p>
+              <p className="text-xs text-slate-400">
+                {activeMascot === 'voxera' ? 'SafeVox AI Koç' : 'Dijital Koç · Türkcell'}
+              </p>
             </div>
           </div>
 
-          {/* Sağ: Eğitim */}
-          <div className="space-y-5">
+          {/* Sağ: Simülasyon */}
+          <div className="flex flex-col gap-4">
 
-            {/* Beklenen cümle */}
-            <div className="bg-dark-800 border border-indigo-100 rounded-2xl p-5">
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
-                Söylemen Gereken
-              </p>
-              <p className="text-sm text-slate-700 leading-relaxed italic">
-                "{activeScenario.beklenen}"
-              </p>
-              <div className="mt-3 flex items-start gap-2 text-xs text-slate-400">
-                <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-yellow-400 flex-shrink-0" />
-                <span>{activeScenario.ipucu}</span>
-              </div>
-            </div>
-
-            {/* Buton: ready / result */}
-            {(sessionState === 'ready' || sessionState === 'result') && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-3">
-                <button onClick={startRecording}
-                  className="flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl
-                             bg-gradient-to-r from-yellow-500 to-yellow-400
-                             hover:from-yellow-400 hover:to-yellow-300
-                             text-gray-900 font-bold text-sm shadow-lg shadow-yellow-500/25
-                             transition-all active:scale-95">
-                  <Mic className="w-5 h-5" />
-                  {sessionState === 'result' ? 'Tekrar Dene' : 'Konuşmaya Başla'}
+            {/* ── IDLE: Senaryo Kartı ── */}
+            {simState === 'idle' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="bg-dark-800 border border-indigo-100 rounded-2xl p-6 space-y-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl mb-2">{activeScenario.emoji}</p>
+                    <h2 className="text-lg font-bold text-slate-800">{activeScenario.label}</h2>
+                    <p className="text-sm text-slate-500 mt-1 leading-relaxed">{activeScenario.desc}</p>
+                  </div>
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${activeScenario.diffColor}`}>
+                    {activeScenario.difficulty}
+                  </span>
+                </div>
+                <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Müşteri Açılış Cümlesi</p>
+                  <p className="text-sm text-slate-700 italic leading-relaxed">"{activeScenario.startMsg}"</p>
+                </div>
+                <button onClick={startSim}
+                  className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm shadow-lg transition-all active:scale-95 ${
+                    activeMascot === 'voxera'
+                      ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-violet-500/25 hover:from-violet-400 hover:to-purple-500'
+                      : 'bg-gradient-to-r from-yellow-500 to-amber-400 text-gray-900 shadow-yellow-500/25 hover:from-yellow-400 hover:to-amber-300'
+                  }`}>
+                  <Zap className="w-5 h-5" />
+                  Simülasyonu Başlat
                 </button>
-                {sessionState === 'result' && (
-                  <button onClick={reset}
-                    className="p-4 rounded-2xl bg-dark-800 border border-indigo-100 text-slate-500
-                               hover:text-slate-800 hover:border-indigo-200 transition-all">
-                    <RotateCcw className="w-5 h-5" />
-                  </button>
-                )}
               </motion.div>
             )}
 
-            {/* Kayıt ediliyor */}
-            {sessionState === 'recording' && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-                <button onClick={stopRecording}
-                  className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl
-                             bg-red-500 hover:bg-red-400 text-slate-800 font-bold text-sm
-                             shadow-lg shadow-red-500/25 transition-all active:scale-95">
-                  <motion.div animate={{ scale: [1, 1.35, 1] }} transition={{ duration: 0.7, repeat: Infinity }}>
-                    <MicOff className="w-5 h-5" />
-                  </motion.div>
-                  Kaydı Durdur
-                </button>
-                <div className="bg-dark-800 border border-yellow-500/20 rounded-xl px-4 py-3 min-h-[52px]">
-                  <p className="text-xs text-yellow-400 mb-1">Dinliyorum...</p>
-                  <p className="text-sm text-slate-600 italic">
-                    {transcript || <span className="text-slate-400">Konuşmaya başla...</span>}
-                  </p>
+            {/* ── VOICE SIM: Sohbet + Ses Fazları ── */}
+            {['customer_speaking','agent_turn','recording','ai_thinking'].includes(simState) && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3">
+
+                {/* Üst bar */}
+                <div className="flex items-center justify-between bg-dark-800 border border-indigo-100 rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{activeScenario.emoji}</span>
+                    <div>
+                      <p className="text-sm font-bold text-slate-700">{activeScenario.label}</p>
+                      <p className="text-xs text-slate-400">{chatHistory.filter(m=>m.role==='agent').length} yanıt verildi</p>
+                    </div>
+                  </div>
+                  <button onClick={endSim}
+                    disabled={simState === 'ai_thinking' || simState === 'customer_speaking'}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl
+                               bg-emerald-500 hover:bg-emerald-400 text-white transition-all
+                               disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-emerald-500/20">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Bitir & Değerlendir
+                  </button>
+                </div>
+
+                {/* Chat geçmişi */}
+                <div className="bg-dark-800 border border-indigo-100 rounded-2xl p-4 space-y-3 overflow-y-auto"
+                  style={{ minHeight: '240px', maxHeight: '340px' }}>
+                  <AnimatePresence initial={false}>
+                    {chatHistory.map((msg, i) => (
+                      <motion.div key={i}
+                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        className={`flex gap-2.5 ${msg.role === 'agent' ? 'flex-row-reverse' : ''}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 shadow-sm ${
+                          msg.role === 'customer' ? 'bg-red-100 border border-red-200' : 'bg-indigo-100 border border-indigo-200'
+                        }`}>
+                          {msg.role === 'customer' ? activeScenario.emoji : '🎧'}
+                        </div>
+                        <div className={`max-w-[78%] ${msg.role === 'agent' ? 'items-end flex flex-col' : ''}`}>
+                          <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                            msg.role === 'customer'
+                              ? 'bg-red-50 border border-red-100 text-slate-700 rounded-tl-sm'
+                              : 'bg-indigo-600 text-white rounded-tr-sm shadow-md shadow-indigo-500/20'
+                          }`}>
+                            {msg.text}
+                          </div>
+                          <p className="text-[10px] text-slate-400 mt-1 px-1">{msg.time}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {simState === 'ai_thinking' && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-red-100 border border-red-200 flex items-center justify-center text-sm flex-shrink-0">{activeScenario.emoji}</div>
+                      <div className="bg-red-50 border border-red-100 rounded-2xl rounded-tl-sm px-4 py-2.5">
+                        <div className="flex gap-1.5 items-center h-5">
+                          {[0,1,2].map((j) => (
+                            <motion.div key={j} className="w-2 h-2 rounded-full bg-red-300"
+                              animate={{ y: [0, -5, 0] }}
+                              transition={{ duration: 0.55, repeat: Infinity, delay: j * 0.15 }} />
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                  <div ref={chatBottomRef} />
+                </div>
+
+                {/* ── Ses fazı paneli ── */}
+                <AnimatePresence mode="wait">
+
+                  {/* Müşteri konuşuyor */}
+                  {simState === 'customer_speaking' && (
+                    <motion.div key="cust-speak"
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                      className="bg-red-50 border border-red-100 rounded-2xl px-5 py-4 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-red-100 border border-red-200 flex items-center justify-center text-2xl flex-shrink-0">
+                        {activeScenario.emoji}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-red-700 mb-2">Müşteri konuşuyor...</p>
+                        <div className="flex gap-1 items-end h-5">
+                          {[8,14,10,17,11,7,13,9].map((h, i) => (
+                            <motion.div key={i} className="w-1.5 bg-red-400 rounded-full"
+                              animate={{ height: [h * 0.4, h, h * 0.4] }}
+                              transition={{ duration: 0.38, repeat: Infinity, delay: i * 0.065 }}
+                              style={{ height: h }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { window.speechSynthesis?.cancel(); setIsTalking(false); setSimState('agent_turn'); setMascotState('idle'); }}
+                        className="text-xs text-red-500 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 transition flex-shrink-0">
+                        Atla →
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* Temsilci sırası — büyük mikrofon */}
+                  {simState === 'agent_turn' && (
+                    <motion.div key="agent-turn"
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                      className="bg-dark-800 border border-indigo-100 rounded-2xl px-5 py-5 flex flex-col items-center gap-4">
+                      <p className="text-sm text-slate-500 font-medium">Sıra sizde — mikrofona basın ve konuşun</p>
+                      <motion.button
+                        onClick={startRecording}
+                        animate={{ boxShadow: [
+                          '0 0 0 0px rgba(99,102,241,0.35)',
+                          '0 0 0 18px rgba(99,102,241,0)',
+                          '0 0 0 0px rgba(99,102,241,0)',
+                        ]}}
+                        transition={{ duration: 1.8, repeat: Infinity }}
+                        className={`w-24 h-24 rounded-full flex items-center justify-center text-white shadow-xl transition-all active:scale-95 ${
+                          activeMascot === 'voxera'
+                            ? 'bg-gradient-to-br from-violet-500 to-purple-700 shadow-violet-500/30 hover:from-violet-400 hover:to-purple-600'
+                            : 'bg-gradient-to-br from-yellow-400 to-amber-500 shadow-yellow-500/30 hover:from-yellow-300 hover:to-amber-400'
+                        }`}
+                      >
+                        <Mic className="w-9 h-9" />
+                      </motion.button>
+                      {/* Yazarak fallback */}
+                      <div className="w-full flex gap-2 items-center">
+                        <input type="text"
+                          value={agentInput}
+                          onChange={e => setAgentInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter' && agentInput.trim()) { sendAgentMessage(agentInput); setAgentInput(''); }}}
+                          placeholder="Yazarak da yanıtlayabilirsiniz..."
+                          className="flex-1 text-sm text-slate-600 placeholder:text-slate-300 bg-indigo-50/60 border border-indigo-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-300 transition"
+                        />
+                        <button onClick={() => { if(agentInput.trim()) { sendAgentMessage(agentInput); setAgentInput(''); }}}
+                          disabled={!agentInput.trim()}
+                          className={`p-2.5 rounded-xl transition disabled:opacity-30 ${
+                            activeMascot === 'voxera' ? 'bg-violet-100 text-violet-600 hover:bg-violet-200' : 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                          }`}>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Kayıt yapılıyor */}
+                  {simState === 'recording' && (
+                    <motion.div key="recording"
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                      className="bg-dark-800 border border-red-200/70 rounded-2xl px-5 py-5 flex flex-col items-center gap-4">
+                      <motion.button
+                        onClick={stopRecording}
+                        animate={{ scale: [1, 1.07, 1] }}
+                        transition={{ duration: 0.65, repeat: Infinity }}
+                        className="w-24 h-24 rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-white shadow-xl shadow-red-500/35 active:scale-95 transition-colors"
+                      >
+                        <Mic className="w-9 h-9" />
+                      </motion.button>
+                      <p className="text-sm font-semibold text-red-500">Dinliyorum... konuşabilirsiniz</p>
+                      {liveTranscript && (
+                        <div className="w-full bg-indigo-50/60 border border-indigo-100 rounded-xl px-4 py-2.5 text-sm text-slate-600 italic">
+                          {liveTranscript}
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-400">Bitirmek için tekrar basın</p>
+                    </motion.div>
+                  )}
+
+                  {/* AI düşünüyor — sade placeholder */}
+                  {simState === 'ai_thinking' && (
+                    <motion.div key="ai-think"
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                      className="bg-indigo-50/60 border border-indigo-100 rounded-2xl px-5 py-4 flex items-center gap-3">
+                      <Loader2 className="w-4 h-4 text-indigo-400 animate-spin flex-shrink-0" />
+                      <p className="text-sm text-indigo-500 font-medium">Müşteri cevaplıyor...</p>
+                    </motion.div>
+                  )}
+
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* ── ENDED: Değerlendirme ── */}
+            {simState === 'ended' && evalResult && (
+              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                className="bg-dark-800 border border-indigo-100 rounded-2xl p-6 space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Simülasyon Sonucu</p>
+                    <p className={`text-5xl font-bold font-mono mt-1 ${
+                      evalResult.toplam >= 75 ? 'text-emerald-500' : evalResult.toplam >= 40 ? 'text-amber-500' : 'text-red-500'
+                    }`}>
+                      {evalResult.toplam}<span className="text-xl font-normal text-slate-400 ml-1">/100</span>
+                    </p>
+                  </div>
+                  <ScoreStars score={evalResult.toplam} />
+                </div>
+
+                {/* Progress bar */}
+                <div className="h-2.5 bg-indigo-50 rounded-full overflow-hidden">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${evalResult.toplam}%` }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                    className={`h-full rounded-full ${
+                      evalResult.toplam >= 75 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+                      evalResult.toplam >= 40 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' :
+                                                'bg-gradient-to-r from-red-500 to-rose-400'
+                    }`} />
+                </div>
+
+                {/* 4 metrik */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: 'empati',           label: 'Empati',            icon: '💙' },
+                    { key: 'cozumOdaklilik',   label: 'Çözüm Odaklılık',   icon: '🎯' },
+                    { key: 'iletisim',         label: 'İletişim',          icon: '💬' },
+                    { key: 'profesyonellik',   label: 'Profesyonellik',    icon: '⭐' },
+                  ].map(({ key, label, icon }) => {
+                    const val = evalResult[key] ?? 0;
+                    return (
+                      <div key={key} className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-medium text-slate-500">{icon} {label}</span>
+                          <span className="text-sm font-bold text-slate-700">{val}<span className="text-xs text-slate-400">/25</span></span>
+                        </div>
+                        <div className="h-1.5 bg-white rounded-full overflow-hidden">
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${(val/25)*100}%` }}
+                            transition={{ duration: 0.8, ease: 'easeOut' }}
+                            className={`h-full rounded-full ${val >= 18 ? 'bg-emerald-400' : val >= 10 ? 'bg-amber-400' : 'bg-red-400'}`} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Geri bildirim */}
+                <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl px-4 py-3">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">AI Geri Bildirimi</p>
+                  <p className="text-sm text-slate-700 leading-relaxed">{evalResult.geri_bildirim}</p>
+                </div>
+
+                {/* Tekrar / Farklı Senaryo */}
+                <div className="flex gap-3">
+                  <button onClick={startSim}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 ${
+                      activeMascot === 'voxera'
+                        ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-violet-500/20'
+                        : 'bg-gradient-to-r from-yellow-500 to-amber-400 text-gray-900 shadow-yellow-500/20'
+                    }`}>
+                    <RotateCcw className="w-4 h-4" />
+                    Tekrar Dene
+                  </button>
+                  <button onClick={stopSim}
+                    className="px-5 py-3.5 rounded-xl font-semibold text-sm bg-dark-800 border border-indigo-100 text-slate-500 hover:text-slate-700 hover:border-indigo-200 transition-all">
+                    Senaryo Değiştir
+                  </button>
                 </div>
               </motion.div>
             )}
 
-            {/* Thinking / Gemini yükleniyor */}
-            {(mascotState === 'thinking' || isEvaluating) && sessionState !== 'result' && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex items-center gap-2 text-sm text-slate-400">
-                <Loader2 className="w-4 h-4 animate-spin text-yellow-400" />
-                {isEvaluating ? 'Gemini değerlendiriyor...' : 'Değerlendiriliyor...'}
-              </motion.div>
-            )}
-
-            {/* Sonuç Kartı */}
-            <AnimatePresence>
-              {sessionState === 'result' && score !== null && (
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className={`border rounded-2xl p-5 space-y-4 ${scoreBg}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Performans Puanı</p>
-                      <p className={`text-4xl font-bold font-mono mt-1 ${scoreColor}`}>
-                        {score}<span className="text-lg font-normal text-slate-400 ml-1">/100</span>
-                      </p>
-                    </div>
-                    <ScoreStars score={score} />
-                  </div>
-
-                  <div className="h-2 bg-indigo-50 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }} animate={{ width: `${score}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className={`h-full rounded-full ${
-                        score >= 75 ? 'bg-gradient-to-r from-green-600 to-green-400' :
-                        score >= 40 ? 'bg-gradient-to-r from-yellow-600 to-yellow-400' :
-                                      'bg-gradient-to-r from-red-600 to-red-400'
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-slate-400 mb-2">Anahtar Kelimeler</p>
-                    <div className="flex flex-wrap gap-2">
-                      {activeScenario.anahtarlar.map((k) => {
-                        const found = evalResult?.bulunanlar
-                          ? evalResult.bulunanlar.some(b => b.toLowerCase().includes(k) || k.includes(b.toLowerCase()))
-                          : transcript.toLowerCase().includes(k);
-                        return (
-                          <span key={k} className={`text-xs px-2.5 py-1 rounded-full border font-medium ${
-                            found ? 'bg-green-500/15 border-green-500/30 text-green-300'
-                                  : 'bg-red-500/10 border-red-500/20 text-red-400'
-                          }`}>
-                            {found ? '✓' : '✗'} {k}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {evalResult?.detay && (
-                    <div className="text-xs text-slate-400 bg-dark-900/40 px-3 py-2 rounded-lg border border-indigo-100">
-                      <span className="text-yellow-500/70 font-medium">Gemini: </span>{evalResult.detay}
-                    </div>
-                  )}
-
-                  {transcript && (
-                    <div>
-                      <p className="text-xs text-slate-400 mb-1">Söylediklerin</p>
-                      <p className="text-sm text-slate-600 italic bg-dark-900/50 px-3 py-2 rounded-lg">
-                        "{transcript}"
-                      </p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
 

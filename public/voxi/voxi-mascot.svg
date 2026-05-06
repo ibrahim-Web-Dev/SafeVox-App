@@ -1,0 +1,149 @@
+<svg width="100%" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Voxi - SafeVox AI Koç Maskotu</title>
+<desc>Kawaii kedi-robot maskot, düzeltilmiş pati pozisyonları</desc>
+
+<defs>
+<linearGradient id="bodyMain" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#DDD6FE"/>
+<stop offset="40%" stop-color="#C4B5FD"/>
+<stop offset="100%" stop-color="#A78BFA"/>
+</linearGradient>
+<linearGradient id="belly" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#F5F3FF"/>
+<stop offset="100%" stop-color="#EDE9FE"/>
+</linearGradient>
+<linearGradient id="earInner" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#F9A8D4"/>
+<stop offset="100%" stop-color="#F472B6"/>
+</linearGradient>
+<radialGradient id="cheekL" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0%" stop-color="#FDA4AF" stop-opacity="0.6"/>
+<stop offset="100%" stop-color="#FDA4AF" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="cheekR" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0%" stop-color="#FDA4AF" stop-opacity="0.6"/>
+<stop offset="100%" stop-color="#FDA4AF" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="eyeShine" cx="0.35" cy="0.3" r="0.6">
+<stop offset="0%" stop-color="#7C3AED"/>
+<stop offset="100%" stop-color="#4C1D95"/>
+</radialGradient>
+<linearGradient id="headsetGrad" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#D6BCFA"/>
+<stop offset="100%" stop-color="#B794F4"/>
+</linearGradient>
+</defs>
+
+<!-- Shadow -->
+<ellipse cx="200" cy="438" rx="80" ry="12" fill="#7C3AED" opacity="0.1"/>
+
+<!-- Tail -->
+<path d="M268 345 Q310 325 318 285 Q322 262 312 248 Q306 238 308 228" fill="none" stroke="#B197FC" stroke-width="14" stroke-linecap="round"/>
+<path d="M268 345 Q310 325 318 285 Q322 262 312 248 Q306 238 308 228" fill="none" stroke="#C4B5FD" stroke-width="10" stroke-linecap="round"/>
+<circle cx="308" cy="225" r="8" fill="#8B5CF6"/>
+
+<!-- Body -->
+<ellipse cx="200" cy="345" rx="82" ry="88" fill="url(#bodyMain)"/>
+<!-- Belly -->
+<ellipse cx="200" cy="358" rx="52" ry="58" fill="url(#belly)"/>
+
+<!-- Left arm - short stubby, paw at tip -->
+<ellipse cx="120" cy="340" rx="20" ry="13" fill="url(#bodyMain)" stroke="#B197FC" stroke-width="1" transform="rotate(-20 120 340)"/>
+<ellipse cx="104" cy="340" rx="11" ry="10" fill="#DDD6FE" stroke="#C4B5FD" stroke-width="1"/>
+<ellipse cx="99" cy="337" rx="3" ry="2.5" fill="#F9A8D4" opacity="0.5"/>
+<ellipse cx="106" cy="336" rx="3" ry="2.5" fill="#F9A8D4" opacity="0.5"/>
+<ellipse cx="102" cy="343" rx="3.5" ry="2.5" fill="#F9A8D4" opacity="0.5"/>
+
+<!-- Right arm - short stubby, paw at tip -->
+<ellipse cx="280" cy="340" rx="20" ry="13" fill="url(#bodyMain)" stroke="#B197FC" stroke-width="1" transform="rotate(20 280 340)"/>
+<ellipse cx="296" cy="340" rx="11" ry="10" fill="#DDD6FE" stroke="#C4B5FD" stroke-width="1"/>
+<ellipse cx="291" cy="337" rx="3" ry="2.5" fill="#F9A8D4" opacity="0.5"/>
+<ellipse cx="298" cy="336" rx="3" ry="2.5" fill="#F9A8D4" opacity="0.5"/>
+<ellipse cx="295" cy="343" rx="3.5" ry="2.5" fill="#F9A8D4" opacity="0.5"/>
+
+<!-- Feet -->
+<ellipse cx="165" cy="425" rx="24" ry="14" fill="#DDD6FE" stroke="#C4B5FD" stroke-width="1"/>
+<ellipse cx="158" cy="423" rx="5" ry="4" fill="#F9A8D4" opacity="0.5"/>
+<ellipse cx="170" cy="422" rx="5" ry="4" fill="#F9A8D4" opacity="0.5"/>
+<ellipse cx="164" cy="429" rx="6" ry="4" fill="#F9A8D4" opacity="0.5"/>
+
+<ellipse cx="235" cy="425" rx="24" ry="14" fill="#DDD6FE" stroke="#C4B5FD" stroke-width="1"/>
+<ellipse cx="228" cy="423" rx="5" ry="4" fill="#F9A8D4" opacity="0.5"/>
+<ellipse cx="240" cy="422" rx="5" ry="4" fill="#F9A8D4" opacity="0.5"/>
+<ellipse cx="234" cy="429" rx="6" ry="4" fill="#F9A8D4" opacity="0.5"/>
+
+<!-- Headset band -->
+<path d="M118 178 Q116 140 142 122 Q165 108 200 104 Q235 108 258 122 Q284 140 282 178" fill="none" stroke="#9F7AEA" stroke-width="5" stroke-linecap="round"/>
+
+<!-- Head -->
+<ellipse cx="200" cy="195" rx="92" ry="88" fill="url(#bodyMain)"/>
+<!-- Face area -->
+<ellipse cx="200" cy="210" rx="68" ry="60" fill="url(#belly)"/>
+
+<!-- Left ear -->
+<path d="M125 152 Q112 108 120 95 Q132 82 155 100 Q170 115 165 135 Z" fill="#C4B5FD" stroke="#B197FC" stroke-width="1"/>
+<path d="M132 145 Q122 115 128 105 Q138 95 152 108 Q162 118 158 134 Z" fill="url(#earInner)"/>
+
+<!-- Right ear -->
+<path d="M275 152 Q288 108 280 95 Q268 82 245 100 Q230 115 235 135 Z" fill="#C4B5FD" stroke="#B197FC" stroke-width="1"/>
+<path d="M268 145 Q278 115 272 105 Q262 95 248 108 Q238 118 242 134 Z" fill="url(#earInner)"/>
+
+<!-- Left eye -->
+<ellipse cx="170" cy="200" rx="22" ry="25" fill="white" stroke="#DDD6FE" stroke-width="1"/>
+<ellipse cx="173" cy="198" rx="14" ry="16" fill="url(#eyeShine)"/>
+<circle cx="180" cy="192" r="6" fill="white" opacity="0.9"/>
+<circle cx="175" cy="202" r="3" fill="white" opacity="0.5"/>
+
+<!-- Right eye -->
+<ellipse cx="230" cy="200" rx="22" ry="25" fill="white" stroke="#DDD6FE" stroke-width="1"/>
+<ellipse cx="233" cy="198" rx="14" ry="16" fill="url(#eyeShine)"/>
+<circle cx="240" cy="192" r="6" fill="white" opacity="0.9"/>
+<circle cx="235" cy="202" r="3" fill="white" opacity="0.5"/>
+
+<!-- Eyebrows -->
+<path d="M152 173 Q165 167 183 172" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round"/>
+<path d="M217 172 Q235 167 248 173" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round"/>
+
+<!-- Nose -->
+<path d="M196 225 L200 230 L204 225 Z" fill="#D946EF" opacity="0.8"/>
+
+<!-- Mouth -->
+<path d="M189 235 Q194 242 200 236" fill="none" stroke="#8B5CF6" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M200 236 Q206 242 211 235" fill="none" stroke="#8B5CF6" stroke-width="1.5" stroke-linecap="round"/>
+
+<!-- Cheek blush -->
+<ellipse cx="142" cy="225" rx="16" ry="10" fill="url(#cheekL)"/>
+<ellipse cx="258" cy="225" rx="16" ry="10" fill="url(#cheekR)"/>
+
+<!-- Whisker dots -->
+<circle cx="130" cy="215" r="2" fill="#C4B5FD"/>
+<circle cx="122" cy="220" r="1.5" fill="#C4B5FD"/>
+<circle cx="115" cy="225" r="1.5" fill="#C4B5FD"/>
+<circle cx="270" cy="215" r="2" fill="#C4B5FD"/>
+<circle cx="278" cy="220" r="1.5" fill="#C4B5FD"/>
+<circle cx="285" cy="225" r="1.5" fill="#C4B5FD"/>
+
+<!-- Headset left ear cup -->
+<rect x="100" y="172" rx="10" ry="10" width="24" height="34" fill="url(#headsetGrad)" stroke="#9F7AEA" stroke-width="1"/>
+<rect x="105" y="179" rx="3" ry="3" width="14" height="10" fill="#E9D5FF" opacity="0.5"/>
+
+<!-- Headset right ear cup -->
+<rect x="276" y="172" rx="10" ry="10" width="24" height="34" fill="url(#headsetGrad)" stroke="#9F7AEA" stroke-width="1"/>
+<rect x="281" y="179" rx="3" ry="3" width="14" height="10" fill="#E9D5FF" opacity="0.5"/>
+
+<!-- Mic boom -->
+<path d="M100 197 Q82 217 86 240" fill="none" stroke="#9F7AEA" stroke-width="3" stroke-linecap="round"/>
+<ellipse cx="86" cy="243" rx="8" ry="6" fill="url(#headsetGrad)" stroke="#9F7AEA" stroke-width="1"/>
+<circle cx="83" cy="242" r="1" fill="#9F7AEA" opacity="0.4"/>
+<circle cx="87" cy="242" r="1" fill="#9F7AEA" opacity="0.4"/>
+<circle cx="85" cy="245" r="1" fill="#9F7AEA" opacity="0.4"/>
+
+<!-- Chest heart -->
+<path d="M193 335 Q193 327 200 321 Q207 327 207 335 Q200 345 193 335Z" fill="#E879F9" opacity="0.5"/>
+<path d="M210 328 Q215 333 210 338" fill="none" stroke="#C084FC" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+
+<!-- Name label -->
+<rect x="155" y="448" rx="14" ry="14" width="90" height="30" fill="#F5F3FF" stroke="#C4B5FD" stroke-width="1"/>
+<text x="200" y="468" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#6D28D9">VOXI</text>
+
+</svg>
