@@ -617,16 +617,40 @@ export default function CoachPage() {
   const startRecordingRef   = useRef(null);
   const audioRef            = useRef(null);
 
-  // Simülasyon aktifken sayfanın scroll yapmasını tamamen engelle
+  // Simülasyon aktifken sayfayı tamamen sabitle — body fixed pozisyonda
   const simActive = simState !== 'idle';
   useEffect(() => {
     if (!simActive) return;
     const scrollY = window.scrollY;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
+    const body = document.body;
+    const html = document.documentElement;
+    const prev = {
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+      bodyOverflow: body.style.overflow,
+      htmlOverflow: html.style.overflow,
+      htmlScrollBehavior: html.style.scrollBehavior,
+    };
+    html.style.scrollBehavior = 'auto';
+    html.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
     return () => {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      body.style.width = prev.bodyWidth;
+      body.style.overflow = prev.bodyOverflow;
+      html.style.overflow = prev.htmlOverflow;
+      html.style.scrollBehavior = prev.htmlScrollBehavior;
       window.scrollTo(0, scrollY);
     };
   }, [simActive]);
