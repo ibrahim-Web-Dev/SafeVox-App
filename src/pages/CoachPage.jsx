@@ -80,7 +80,7 @@ const ELEVENLABS_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
 const VOICE_VOXI     = 'PDXaJVX420kXqPLLIOY4';
 const VOICE_TEKNOCAN = 'dPV8YcOEtF8RVJFPcw6f';
 
-// Paylaşımlı AudioContext — autoplay kısıtını aşmak için tek context kullanılır
+// Paylaşımlı AudioContext
 let _sharedAudioCtx = null;
 function getAudioCtx() {
   if (!_sharedAudioCtx || _sharedAudioCtx.state === 'closed') {
@@ -88,9 +88,21 @@ function getAudioCtx() {
   }
   return _sharedAudioCtx;
 }
-// User gesture anında çağrılır — context'i "running" duruma alır
-function wakeAudio() {
-  try { getAudioCtx().resume(); } catch {}
+
+// User gesture anında çağrılır.
+// resume() await edilip sessiz bir buffer çalınarak context tamamen unlock edilir.
+// Bu yapılmadan fetch() sonrası context suspended kalabilir.
+async function wakeAudio() {
+  try {
+    const ctx = getAudioCtx();
+    await ctx.resume();
+    // Sessiz 1-frame buffer — context'i tam olarak "running" durumuna kilitler
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch {}
 }
 
 // Browser TTS — fallback
@@ -668,8 +680,8 @@ export default function CoachPage() {
   }, [ttsEnabled, activeMascot]);
 
   // Simülasyonu başlat
-  const startSim = () => {
-    wakeAudio(); // AudioContext'i user gesture anında resume et
+  const startSim = async () => {
+    await wakeAudio(); // AudioContext'i user gesture anında resume et
     window.speechSynthesis?.cancel();
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     recognitionRef.current?.stop();
@@ -801,8 +813,8 @@ Yalnızca JSON döndür:
   }, [chatHistory, activeScenario, mascotSpeak]);
 
   // Mikrofon kaydı
-  const startRecording = useCallback(() => {
-    wakeAudio(); // Ses kaydı başlangıcında da context'i canlı tut
+  const startRecording = useCallback(async () => {
+    await wakeAudio(); // Ses kaydı başlangıcında da context'i canlı tut
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { mascotSpeak('Chrome kullanman gerekiyor!', 'sad'); return; }
     const rec = new SR();
@@ -1130,11 +1142,11 @@ Yalnızca JSON döndür:
                         <input type="text"
                           value={agentInput}
                           onChange={e => setAgentInput(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter' && agentInput.trim()) { wakeAudio(); sendAgentMessage(agentInput); setAgentInput(''); }}}
+                          onKeyDown={async e => { if (e.key === 'Enter' && agentInput.trim()) { await wakeAudio(); sendAgentMessage(agentInput); setAgentInput(''); }}}
                           placeholder="Yazarak da yanıtlayabilirsiniz..."
                           className="flex-1 text-sm text-slate-600 placeholder:text-slate-300 bg-indigo-50/60 border border-indigo-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-300 transition"
                         />
-                        <button onClick={() => { if(agentInput.trim()) { wakeAudio(); sendAgentMessage(agentInput); setAgentInput(''); }}}
+                        <button onClick={async () => { if(agentInput.trim()) { await wakeAudio(); sendAgentMessage(agentInput); setAgentInput(''); }}}
                           disabled={!agentInput.trim()}
                           className={`p-2.5 rounded-xl transition disabled:opacity-30 ${
                             activeMascot === 'voxera' ? 'bg-violet-100 text-violet-600 hover:bg-violet-200' : 'bg-amber-100 text-amber-600 hover:bg-amber-200'
