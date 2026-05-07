@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, RotateCcw, GraduationCap, ChevronRight, Star, Volume2, VolumeX, Loader2,
   CheckCircle2, Circle, BookOpen, ShieldCheck, Brain, Zap, Users, Award, Sparkles } from 'lucide-react';
@@ -80,28 +80,17 @@ const ELEVENLABS_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
 const VOICE_VOXI     = 'PDXaJVX420kXqPLLIOY4';
 const VOICE_TEKNOCAN = 'dPV8YcOEtF8RVJFPcw6f';
 
-// Paylaşımlı AudioContext
-let _sharedAudioCtx = null;
-function getAudioCtx() {
-  if (!_sharedAudioCtx || _sharedAudioCtx.state === 'closed') {
-    _sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  return _sharedAudioCtx;
-}
-
-// User gesture anında çağrılır.
-// resume() await edilip sessiz bir buffer çalınarak context tamamen unlock edilir.
-// Bu yapılmadan fetch() sonrası context suspended kalabilir.
+// Kullanıcı gesture'ı anında çağrılarak tarayıcının ses iznini açar
 async function wakeAudio() {
   try {
-    const ctx = getAudioCtx();
-    await ctx.resume();
-    // Sessiz 1-frame buffer — context'i tam olarak "running" durumuna kilitler
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') await ctx.resume();
     const buf = ctx.createBuffer(1, 1, 22050);
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.connect(ctx.destination);
     src.start(0);
+    src.onended = () => ctx.close().catch(() => {});
   } catch {}
 }
 
@@ -127,7 +116,7 @@ function speakBrowser(text, onStart, onEnd) {
     : doSpeak();
 }
 
-// ElevenLabs TTS — paylaşımlı AudioContext ile, her seferinde yeni context oluşturulmaz
+// ElevenLabs TTS — <audio> + blob URL (AudioContext bağımlılığı yok)
 async function speakElevenLabs(text, voiceId, audioRef, onStart, onEnd) {
   if (!ELEVENLABS_KEY) { speakBrowser(text, onStart, onEnd); return; }
   try {
@@ -142,16 +131,20 @@ async function speakElevenLabs(text, voiceId, audioRef, onStart, onEnd) {
       }),
     });
     if (!res.ok) throw new Error(`ElevenLabs ${res.status}`);
-    const arrayBuffer = await res.arrayBuffer();
-    const ctx = getAudioCtx();
-    await ctx.resume(); // context askıdaysa kaldır
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-    const source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(ctx.destination);
-    source.onended = () => { onEnd?.(); };
-    source.start(0);
-    if (audioRef) audioRef.current = { pause: () => { try { source.stop(); } catch {} } };
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      try { URL.revokeObjectURL(url); } catch {}
+      onEnd?.();
+    };
+    audio.onended = done;
+    audio.onerror = done;
+    if (audioRef) audioRef.current = { pause: () => { audio.pause(); done(); } };
+    await audio.play().catch(done);
   } catch {
     onEnd?.();
   }
@@ -623,18 +616,20 @@ export default function CoachPage() {
   const sendAgentMsgRef     = useRef(null);
   const startRecordingRef   = useRef(null);
   const audioRef            = useRef(null);
-  const savedScrollY        = useRef(0);
 
-  // Simülasyon aktifken sayfa scroll pozisyonunu kilitle
-  useLayoutEffect(() => {
-    if (simState !== 'idle' && simState !== 'ended') {
-      window.scrollTo(0, savedScrollY.current);
-    }
-  });
-
+  // Simülasyon aktifken sayfanın scroll yapmasını tamamen engelle
+  const simActive = simState !== 'idle';
   useEffect(() => {
-    if (simState === 'idle') savedScrollY.current = window.scrollY;
-  }, [simState]);
+    if (!simActive) return;
+    const scrollY = window.scrollY;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [simActive]);
 
   // Maskot konuşma balonu — ElevenLabs sesi
   const mascotSpeak = useCallback((text, nextState = 'idle', onComplete) => {
