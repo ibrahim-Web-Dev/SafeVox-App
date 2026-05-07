@@ -612,12 +612,6 @@ export default function CoachPage() {
   const startRecordingRef   = useRef(null);
   const audioRef            = useRef(null);
 
-  // Yalnızca chat kutusunu kaydır, sayfayı değil
-  useEffect(() => {
-    const el = chatContainerRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [chatHistory, simState]);
-
   // Maskot konuşma balonu — ElevenLabs sesi
   const mascotSpeak = useCallback((text, nextState = 'idle', onComplete) => {
     setBubbleText(text);
