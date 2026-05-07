@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, RotateCcw, GraduationCap, ChevronRight, Star, Volume2, VolumeX, Loader2,
   CheckCircle2, Circle, BookOpen, ShieldCheck, Brain, Zap, Users, Award, Sparkles } from 'lucide-react';
@@ -611,6 +611,18 @@ export default function CoachPage() {
   const sendAgentMsgRef     = useRef(null);
   const startRecordingRef   = useRef(null);
   const audioRef            = useRef(null);
+  const savedScrollY        = useRef(0);
+
+  // Simülasyon aktifken sayfa scroll pozisyonunu kilitle
+  useLayoutEffect(() => {
+    if (simState !== 'idle' && simState !== 'ended') {
+      window.scrollTo(0, savedScrollY.current);
+    }
+  });
+
+  useEffect(() => {
+    if (simState === 'idle') savedScrollY.current = window.scrollY;
+  }, [simState]);
 
   // Maskot konuşma balonu — ElevenLabs sesi
   const mascotSpeak = useCallback((text, nextState = 'idle', onComplete) => {
