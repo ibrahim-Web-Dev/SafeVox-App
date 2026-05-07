@@ -606,13 +606,16 @@ export default function CoachPage() {
   const recognitionRef      = useRef(null);
   const bubbleTimerRef      = useRef(null);
   const chatBottomRef       = useRef(null);
+  const chatContainerRef    = useRef(null);
   const liveTranscriptRef   = useRef('');
   const sendAgentMsgRef     = useRef(null);
   const startRecordingRef   = useRef(null);
   const audioRef            = useRef(null);
 
+  // Yalnızca chat kutusunu kaydır, sayfayı değil
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = chatContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [chatHistory, simState]);
 
   // Maskot konuşma balonu — ElevenLabs sesi
@@ -1019,7 +1022,7 @@ Yalnızca JSON döndür:
                 </div>
 
                 {/* Chat geçmişi */}
-                <div className="bg-dark-800 border border-indigo-100 rounded-2xl p-4 space-y-3 overflow-y-auto"
+                <div ref={chatContainerRef} className="bg-dark-800 border border-indigo-100 rounded-2xl p-4 space-y-3 overflow-y-auto"
                   style={{ minHeight: '240px', maxHeight: '340px' }}>
                   <AnimatePresence initial={false}>
                     {chatHistory.map((msg, i) => (
