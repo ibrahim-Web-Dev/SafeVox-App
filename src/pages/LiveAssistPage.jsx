@@ -167,7 +167,7 @@ function DashboardCards({ history }) {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-4 mb-5">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
       {cards.map(({ label, value, icon: Icon, color, bg }) => (
         <motion.div
           key={label}
@@ -434,23 +434,29 @@ function CaymaPanel({ customer }) {
           <p className="text-xs text-red-500">Otomatik tespit edildi</p>
         </div>
       </div>
-      <div className="space-y-2">
-        <div className="flex justify-between items-center bg-white rounded-xl px-4 py-2.5 border border-red-100">
-          <span className="text-sm text-slate-600">Cayma Ücreti</span>
-          <span className="font-bold text-red-600 text-lg">{customer.caymaUcreti.toLocaleString('tr')} ₺</span>
-        </div>
-        <div className="flex justify-between items-center bg-white rounded-xl px-4 py-2.5 border border-red-100">
-          <span className="text-sm text-slate-600">Kalan Ay</span>
-          <span className="font-semibold text-slate-700">{customer.kalanAy} ay</span>
-        </div>
-        <div className="flex justify-between items-center bg-white rounded-xl px-4 py-2.5 border border-red-100">
-          <span className="text-sm text-slate-600">Sözleşme Bitiş</span>
-          <span className="font-semibold text-slate-700">{customer.sozlesmeBitis}</span>
-        </div>
-      </div>
-      <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
-        💡 <strong>İpucu:</strong> Sadakat paketi teklifi sunabilirsiniz. Müşterinin {customer.sadakatPuani} puanı var.
-      </div>
+      {!customer ? (
+        <p className="text-xs text-slate-400 italic text-center py-2">Müşteri bilgisi bekleniyor…</p>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center bg-white rounded-xl px-4 py-2.5 border border-red-100">
+              <span className="text-sm text-slate-600">Cayma Ücreti</span>
+              <span className="font-bold text-red-600 text-lg">{customer.caymaUcreti.toLocaleString('tr')} ₺</span>
+            </div>
+            <div className="flex justify-between items-center bg-white rounded-xl px-4 py-2.5 border border-red-100">
+              <span className="text-sm text-slate-600">Kalan Ay</span>
+              <span className="font-semibold text-slate-700">{customer.kalanAy} ay</span>
+            </div>
+            <div className="flex justify-between items-center bg-white rounded-xl px-4 py-2.5 border border-red-100">
+              <span className="text-sm text-slate-600">Sözleşme Bitiş</span>
+              <span className="font-semibold text-slate-700">{customer.sozlesmeBitis}</span>
+            </div>
+          </div>
+          <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
+            💡 <strong>İpucu:</strong> Sadakat paketi teklifi sunabilirsiniz. Müşterinin {customer.sadakatPuani} puanı var.
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }
@@ -469,19 +475,23 @@ function FaturaPanel({ customer }) {
         </div>
         <p className="text-sm font-bold text-blue-700">Son Faturalar</p>
       </div>
-      <div className="space-y-1.5">
-        {customer.sonFaturalar.map((f, i) => (
-          <div key={i} className="flex justify-between items-center bg-white rounded-xl px-4 py-2 border border-blue-100">
-            <span className="text-sm text-slate-600">{f.ay}</span>
-            <div className="flex items-center gap-3">
-              <span className="font-semibold text-slate-800">{f.tutar} ₺</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                f.durum === 'Ödendi' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
-              }`}>{f.durum}</span>
+      {!customer ? (
+        <p className="text-xs text-slate-400 italic text-center py-2">Müşteri bilgisi bekleniyor…</p>
+      ) : (
+        <div className="space-y-1.5">
+          {customer.sonFaturalar.map((f, i) => (
+            <div key={i} className="flex justify-between items-center bg-white rounded-xl px-4 py-2 border border-blue-100">
+              <span className="text-sm text-slate-600">{f.ay}</span>
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-slate-800">{f.tutar} ₺</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  f.durum === 'Ödendi' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+                }`}>{f.durum}</span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -500,33 +510,37 @@ function PaketPanel({ customer }) {
         </div>
         <p className="text-sm font-bold text-violet-700">Paket Detayı</p>
       </div>
-      <div className="space-y-2">
-        <div className="bg-white rounded-xl px-4 py-3 border border-violet-100">
-          <p className="text-xs text-slate-400 mb-0.5">Aktif Paket</p>
-          <p className="font-semibold text-slate-800">{customer.paket}</p>
-          <p className="text-safe-600 font-bold mt-1">{customer.aylikUcret} ₺/ay</p>
-        </div>
-        {customer.kalanInternet !== null ? (
+      {!customer ? (
+        <p className="text-xs text-slate-400 italic text-center py-2">Müşteri bilgisi bekleniyor…</p>
+      ) : (
+        <div className="space-y-2">
           <div className="bg-white rounded-xl px-4 py-3 border border-violet-100">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-slate-500">İnternet Kullanımı</span>
-              <span className="font-semibold text-slate-700">{customer.internet.kullanim} / {customer.internet.limit} GB</span>
-            </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600"
-                style={{ width: `${Math.min(100, (customer.internet.kullanim / customer.internet.limit) * 100)}%` }}
-              />
-            </div>
-            <p className="text-xs text-slate-500 mt-1.5">{customer.kalanInternet} GB kalan</p>
+            <p className="text-xs text-slate-400 mb-0.5">Aktif Paket</p>
+            <p className="font-semibold text-slate-800">{customer.paket}</p>
+            <p className="text-safe-600 font-bold mt-1">{customer.aylikUcret} ₺/ay</p>
           </div>
-        ) : (
-          <div className="bg-white rounded-xl px-4 py-3 border border-violet-100 text-center">
-            <p className="font-bold text-violet-600 text-lg">∞ Sınırsız</p>
-            <p className="text-xs text-slate-400">İnternet kotası yok</p>
-          </div>
-        )}
-      </div>
+          {customer.kalanInternet !== null ? (
+            <div className="bg-white rounded-xl px-4 py-3 border border-violet-100">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-slate-500">İnternet Kullanımı</span>
+                <span className="font-semibold text-slate-700">{customer.internet.kullanim} / {customer.internet.limit} GB</span>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600"
+                  style={{ width: `${Math.min(100, (customer.internet.kullanim / customer.internet.limit) * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-slate-500 mt-1.5">{customer.kalanInternet} GB kalan</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl px-4 py-3 border border-violet-100 text-center">
+              <p className="font-bold text-violet-600 text-lg">∞ Sınırsız</p>
+              <p className="text-xs text-slate-400">İnternet kotası yok</p>
+            </div>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -545,23 +559,29 @@ function SadakatPanel({ customer }) {
         </div>
         <p className="text-sm font-bold text-amber-700">Sadakat & Kampanyalar</p>
       </div>
-      <div className="bg-white rounded-xl px-4 py-3 border border-amber-100 mb-2">
-        <p className="text-xs text-slate-400 mb-1">Mevcut Puanı</p>
-        <p className="text-2xl font-bold text-amber-600">{customer.sadakatPuani.toLocaleString('tr')}</p>
-        <p className="text-xs text-slate-500">Türkcell Sadakat Puanı</p>
-      </div>
-      <div className="space-y-1.5 text-xs">
-        {[
-          '🎁 500 puan ile 5 GB ek internet',
-          '🎬 1000 puan ile 1 aylık TV+ üyelik',
-          '☕ 200 puan ile Starbucks içecek',
-        ].map((o, i) => (
-          <div key={i} className="bg-white rounded-xl px-3 py-2 border border-amber-100 flex items-center justify-between">
-            <span className="text-slate-600">{o}</span>
-            <ChevronRight className="w-3 h-3 text-slate-400 flex-shrink-0" />
+      {!customer ? (
+        <p className="text-xs text-slate-400 italic text-center py-2">Müşteri bilgisi bekleniyor…</p>
+      ) : (
+        <>
+          <div className="bg-white rounded-xl px-4 py-3 border border-amber-100 mb-2">
+            <p className="text-xs text-slate-400 mb-1">Mevcut Puanı</p>
+            <p className="text-2xl font-bold text-amber-600">{customer.sadakatPuani.toLocaleString('tr')}</p>
+            <p className="text-xs text-slate-500">Türkcell Sadakat Puanı</p>
           </div>
-        ))}
-      </div>
+          <div className="space-y-1.5 text-xs">
+            {[
+              '🎁 500 puan ile 5 GB ek internet',
+              '🎬 1000 puan ile 1 aylık TV+ üyelik',
+              '☕ 200 puan ile Starbucks içecek',
+            ].map((o, i) => (
+              <div key={i} className="bg-white rounded-xl px-3 py-2 border border-amber-100 flex items-center justify-between">
+                <span className="text-slate-600">{o}</span>
+                <ChevronRight className="w-3 h-3 text-slate-400 flex-shrink-0" />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }
@@ -580,12 +600,15 @@ function SikayetPanel({ customer }) {
         </div>
         <div>
           <p className="text-sm font-bold text-orange-700">Şikayet / Sorun Talebi</p>
-          {customer.acikSikayet > 0 && (
+          {customer?.acikSikayet > 0 && (
             <p className="text-xs text-red-500">{customer.acikSikayet} açık şikayet mevcut!</p>
           )}
         </div>
       </div>
-      <div className="space-y-2 text-sm">
+      {!customer ? (
+        <p className="text-xs text-slate-400 italic text-center py-2">Müşteri bilgisi bekleniyor…</p>
+      ) : null}
+      <div className="space-y-2 text-sm mt-1">
         {[
           { label: 'Teknik Sorun Bildir', color: 'bg-white border-orange-100' },
           { label: 'Fatura İtirazı Aç', color: 'bg-white border-orange-100' },
@@ -1258,6 +1281,7 @@ export default function LiveAssistPage() {
   const demoTimersRef                     = useRef([]);
   const transcriptRef                     = useRef('');
   const scrollRef                         = useRef(null);
+  const panelScrollRef                    = useRef(null);
 
   // TC / telefon / isim tespiti
   useEffect(() => {
@@ -1271,7 +1295,12 @@ export default function LiveAssistPage() {
       if (found) { setCustomer(found); setNotes(found.notlar || ''); }
     }
     const panels = detectPanels(full);
-    setActivePanels(panels);
+    setActivePanels(prev => {
+      const newOnes = panels.filter(p => !prev.includes(p));
+      if (newOnes.length === 0) return prev;
+      setTimeout(() => panelScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }), 50);
+      return [...newOnes, ...prev];
+    });
   }, [transcript, interim, customer]);
 
 
@@ -1363,11 +1392,11 @@ export default function LiveAssistPage() {
   };
 
   const panelComponents = {
-    cayma:   customer && <CaymaPanel   key="cayma"   customer={customer} />,
-    fatura:  customer && <FaturaPanel  key="fatura"  customer={customer} />,
-    paket:   customer && <PaketPanel   key="paket"   customer={customer} />,
-    sadakat: customer && <SadakatPanel key="sadakat" customer={customer} />,
-    sikayet: customer && <SikayetPanel key="sikayet" customer={customer} />,
+    cayma:   <CaymaPanel   key="cayma"   customer={customer} />,
+    fatura:  <FaturaPanel  key="fatura"  customer={customer} />,
+    paket:   <PaketPanel   key="paket"   customer={customer} />,
+    sadakat: <SadakatPanel key="sadakat" customer={customer} />,
+    sikayet: <SikayetPanel key="sikayet" customer={customer} />,
   };
 
   return (
@@ -1375,19 +1404,19 @@ export default function LiveAssistPage() {
 
       {/* ── Header ── */}
       <div className="border-b border-indigo-100 bg-dark-800/60 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-safe-500 to-vox-600 flex items-center justify-center shadow-md shadow-safe-500/20">
-              <Zap className="w-5 h-5 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-safe-500 to-vox-600 flex items-center justify-center shadow-md shadow-safe-500/20">
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
               <h1 className="text-sm font-bold text-slate-800 leading-none">Live Assist</h1>
-              <p className="text-xs text-slate-400 mt-0.5">Gerçek zamanlı müşteri asistanı</p>
+              <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">Gerçek zamanlı müşteri asistanı</p>
             </div>
           </div>
 
           {/* Çağrı durumu */}
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 border border-slate-200">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 shrink-0">
             <motion.div
               className={`w-2 h-2 rounded-full ${isListening ? 'bg-red-500' : callActive ? 'bg-amber-400' : 'bg-slate-400'}`}
               animate={isListening ? { scale: [1, 1.4, 1] } : {}}
@@ -1400,14 +1429,14 @@ export default function LiveAssistPage() {
           </div>
 
           {/* Manuel arama */}
-          <form onSubmit={handleManualLookup} className="flex items-center gap-2 ml-2">
+          <form onSubmit={handleManualLookup} className="hidden sm:flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 value={manualQuery}
                 onChange={(e) => setManualQuery(e.target.value)}
                 placeholder="TC veya telefon no..."
-                className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-safe-400 focus:ring-2 focus:ring-safe-400/20 w-44 transition"
+                className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-safe-400 focus:ring-2 focus:ring-safe-400/20 w-40 transition"
               />
             </div>
             <button type="submit"
@@ -1417,7 +1446,7 @@ export default function LiveAssistPage() {
           </form>
 
           {/* Demo müşteri hızlı seç */}
-          <div className="flex items-center gap-1.5 ml-auto">
+          <div className="hidden md:flex items-center gap-1.5 ml-auto">
             <span className="text-xs text-slate-400">Demo:</span>
             {[
               { tc: '12345678901', label: 'Ahmet' },
@@ -1435,16 +1464,16 @@ export default function LiveAssistPage() {
           {/* Geçmiş butonu */}
           <button
             onClick={() => setShowHistory((v) => !v)}
-            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border font-medium transition ml-2 ${
+            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border font-medium transition ml-auto md:ml-2 shrink-0 ${
               showHistory
                 ? 'bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-500/25'
                 : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            Geçmiş
+            <span className="hidden sm:inline">Geçmiş</span>
             {history.length > 0 && (
-              <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ml-0.5 ${
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
                 showHistory ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'
               }`}>{history.length}</span>
             )}
@@ -1452,15 +1481,15 @@ export default function LiveAssistPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
         <DashboardCards history={history} />
-        <div className="grid grid-cols-[1fr_400px] gap-6 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 lg:gap-6 lg:h-[calc(100vh-200px)]">
 
           {/* ── Sol: Transkript ── */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 min-h-0">
 
             {/* Transkript kutusu */}
-            <div className="flex-1 bg-white border border-indigo-100 rounded-2xl shadow-md shadow-indigo-50 flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-[45vh] lg:min-h-0 bg-white border border-indigo-100 rounded-2xl shadow-md shadow-indigo-50 flex flex-col overflow-hidden">
               <div className="px-5 py-4 border-b border-indigo-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Mic className="w-4 h-4 text-slate-400" />
@@ -1577,7 +1606,7 @@ export default function LiveAssistPage() {
           </div>
 
           {/* ── Sağ: Müşteri Paneli ── */}
-          <div className="overflow-y-auto space-y-4 pb-2">
+          <div ref={panelScrollRef} className="lg:overflow-y-auto space-y-4 pb-2">
 
             {/* Müşteri bulunamadı placeholder */}
             {!customer && (

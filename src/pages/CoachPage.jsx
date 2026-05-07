@@ -19,9 +19,9 @@ const VOXERA_SCENARIOS = [
     difficulty: 'Orta',
     diffColor: 'text-amber-700 bg-amber-100 border-amber-200',
     desc: 'Faturasına haksız yere ücret yansımış, oldukça sinirli bir müşteri.',
-    mascotMesaj: 'Sinirli müşteri senaryosu! Empati kur, sakin kal ve çözüm üret. Hazır mısın?',
-    startMsg: 'Bak, bu ay faturama 150 TL ekstra çıkmış — bunu kimse açıklamadı. Çok sinirli hissediyorum, ne olduğunu anlatın!',
-    systemPrompt: `Sen sinirli bir müşterisin. Faturana haksız 150 TL ek ücret yansımış. Başlangıçta çok öfkeli ve aceleci davran, sözü kes, "bunu daha önce de söyledim" gibi şeyler söyle. Temsilci seni gerçekten dinleyip empati kurarsa ve somut çözüm sunarsa yavaş yavaş sakinleş. Türkçe konuş, kısa cümleler kullan. Temsilci rolünü üstlenme, sadece müşteri ol.`,
+    mascotMesaj: 'Dikkat! Sinirli müşteri geliyor. Empati kur, sözünü kesme ve somut çözüm sun.',
+    startMsg: 'Yani bak, faturama baktım bu ay, 150 lira fazladan çekmiş. Kimseyi arayamadım, bekletildim, şimdi siz anlatın bana bu ne?',
+    systemPrompt: `Sen sinirli bir Türk müşterisin. Faturana açıklamasız 150 TL ek ücret yansımış ve öfkelisin. Konuşma tarzın: kısa ve sert cümleler, "yani", "bak", "dinleyin" gibi sözcükler, zaman zaman sözü kesmek. Temsilci özür dileyip somut bir çözüm (iade, düzeltme) sunarsa yavaş yavaş sakinleş. Temsilci savunmacı davranırsa daha da sinirlen. 1-3 cümleyle cevap ver, asla temsilci gibi davranma.`,
   },
   {
     id: 'sakin',
@@ -30,9 +30,9 @@ const VOXERA_SCENARIOS = [
     difficulty: 'Kolay',
     diffColor: 'text-emerald-700 bg-emerald-100 border-emerald-200',
     desc: 'Merak eden, kibarca soru soran, kolay ikna edilebilir bir müşteri.',
-    mascotMesaj: 'Sakin ve meraklı bir müşteri var. İyi bir fırsat — çözüm sun ve upsell yap!',
-    startMsg: 'Merhaba, internet paketimi değiştirmek istiyorum ama hangisinin daha uygun olduğuna karar veremedim, yardımcı olabilir misiniz?',
-    systemPrompt: `Sen kibarca soru soran, açık fikirli bir müşterisin. Sakin, nazik ve meraklısın. Temsilcinin önerilerini dinle, mantıklı sorular sor. Çok hızlı ikna olma ama ısrarcı da olma. Türkçe konuş.`,
+    mascotMesaj: 'Sakin ve meraklı bir müşteri. Fırsatı iyi değerlendir, doğru paketi öner!',
+    startMsg: 'Merhaba, şey... paketimi değiştirmek istiyorum açıkçası ama hangisi daha iyi bilmiyorum, yardımcı olabilir misiniz?',
+    systemPrompt: `Sen sakin, kibar ve meraklı bir Türk müşterisin. Konuşma tarzın: nazik, "acaba", "peki", "anlıyorum" gibi sözcükler, sorularını düşünerek sormak. Temsilcinin önerilerini dinle, 1-2 soru sor, mantıklı bir öneri gelirse memnuniyetle kabul et. Çok hızlı da ikna olma. 1-3 cümleyle cevap ver.`,
   },
   {
     id: 'zorlu',
@@ -41,9 +41,9 @@ const VOXERA_SCENARIOS = [
     difficulty: 'Zor',
     diffColor: 'text-red-700 bg-red-100 border-red-200',
     desc: 'Her şeye itiraz eden, hiçbir çözümü beğenmeyen, sabır isteyen müşteri.',
-    mascotMesaj: 'En zorlu müşteri tipi! Sabrını koru, profesyonel kal. Bu zor ama üstesinden gelebilirsin!',
-    startMsg: 'Geçen ay da aradım, çözülmedi. Ondan önce de aradım, yine çözülmedi. Şimdi de bir şey değişmeyecek biliyorum ama yine de arıyorum.',
-    systemPrompt: `Sen çok zorlu bir müşterisin. Daha önce birçok kez aradın ama sorunun çözülmediğini düşünüyorsun. Her çözüm önerisine "evet ama", "bunu daha önce de denedim", "boşuna konuşuyoruz" gibi tepkiler ver. Asla hemen ikna olma. Temsilci çok somut, adım adım bir plan sunarsa biraz yumuşa. Türkçe konuş.`,
+    mascotMesaj: 'En zorlu senaryo! Sabrını koru, profesyonel kal, çözüme odaklan.',
+    startMsg: 'Geçen ay da aradım olmadı, ondan önce de aradım yine olmadı. Şimdi de bir şey değişmeyecek zaten biliyorum, ama ne yapayım işte...',
+    systemPrompt: `Sen çok zorlu, güvensiz bir Türk müşterisin. Defalarca aradın ama sorunun hiç çözülmediğini düşünüyorsun. Konuşma tarzın: "evet ama...", "bunu zaten söyledim", "ne fark eder ki", "inanmıyorum artık" gibi ifadeler. Temsilci somut adımlar atıp seni bilgilendirirse çok yavaş yumuşa. 1-3 cümleyle cevap ver.`,
   },
   {
     id: 'hayalkiriklig',
@@ -52,9 +52,9 @@ const VOXERA_SCENARIOS = [
     difficulty: 'Orta',
     diffColor: 'text-amber-700 bg-amber-100 border-amber-200',
     desc: 'Hizmet kesintisi yaşayan, hayal kırıklığına uğramış, üzgün bir müşteri.',
-    mascotMesaj: 'Hayal kırıklığına uğramış bir müşteri. Empati çok önemli burada — gerçekten hissettir!',
-    startMsg: 'Üç gündür internet yok. Evden çalışıyorum, çocuğum online derslerine giremiyor. Çok zor bir durumdayız.',
-    systemPrompt: `Sen 3 gündür yaşadığın internet kesintisinden çok üzgün ve yorgun bir müşterisin. Sinirli değilsin ama çok mağdursun. Duygusal ol — "çocuğum ders yapamıyor", "işimi kaybedebilirim" gibi söyle. Temsilci samimi empati kurarsa ve net bir çözüm süresi verirse rahatla. Türkçe konuş.`,
+    mascotMesaj: 'Duygusal bir müşteri var. Empati çok kritik — önce duy, sonra çöz.',
+    startMsg: 'Üç gündür internetim yok. Evden çalışıyorum ben, çocuğum okula bağlanamıyor... gerçekten çok zor oldu ya.',
+    systemPrompt: `Sen üzgün ve yorgun bir Türk müşterisin. 3 gündür internet yok, evden çalışıyorsun, çocuğun etkileniyor. Sinirli değil ama çaresiz ve duygusalsın. Konuşma tarzın: "ya gerçekten", "ne yapacağımı bilemedim", "çok zor" gibi ifadeler. Temsilci gerçekten empati kurarsa ve net süre verirse rahatla. 1-3 cümleyle cevap ver.`,
   },
   {
     id: 'kararsiz',
@@ -63,9 +63,9 @@ const VOXERA_SCENARIOS = [
     difficulty: 'Kolay',
     diffColor: 'text-emerald-700 bg-emerald-100 border-emerald-200',
     desc: 'Karar vermekte zorlanan, alternatifler arasında gidip gelen müşteri.',
-    mascotMesaj: 'Kararsız müşteri! Yönlendir, güven ver ve doğru seçeneğe yönel. Haydi!',
-    startMsg: 'Şimdi şöyle, hem bu pakete bakıyorum hem şu pakete... bilmiyorum hangisi daha iyi. Bir de rakip firma var ama onlar da pahalı gibi...',
-    systemPrompt: `Sen karar vermekte zorlanan bir müşterisin. Sürekli "ama şu ne olacak", "peki ya bu", "bilmiyorum" diyorsun. Temsilci net karşılaştırma yapar ve sana özel bir öneri sunarsa kararını ver. Türkçe konuş.`,
+    mascotMesaj: 'Kararsız müşteri! Net ol, yönlendir ve güven ver.',
+    startMsg: 'Şimdi şöyle yani... hem şu pakete bakıyorum hem buna, ikisi de aynı mı aslında? Bir de başka firmalara baktım ama oralar da pahalı gibi geldi...',
+    systemPrompt: `Sen kararsız, kafası karışık bir Türk müşterisin. Seçenekler arasında gidip geliyorsun. Konuşma tarzın: "yani", "bilmiyorum ki", "ama şöyle de var", "hmm" gibi ifadeler, sürekli yeni soru açmak. Temsilci sana özel net bir öneri yapıp avantajlarını açıklarsa kararını ver. 1-3 cümleyle cevap ver.`,
   },
 ];
 
@@ -76,10 +76,14 @@ const TEKNOCAN_SCENARIOS = VOXERA_SCENARIOS.map(s => ({
 }));
 
 // ── TTS ────────────────────────────────────────────────────────────────────────
-function speak(text, onStart, onEnd) {
+const ELEVENLABS_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
+const VOICE_VOXI     = 'PDXaJVX420kXqPLLIOY4';
+const VOICE_TEKNOCAN = 'dPV8YcOEtF8RVJFPcw6f';
+
+// Browser TTS — müşteri simülasyon sesi
+function speakBrowser(text, onStart, onEnd) {
   if (!('speechSynthesis' in window)) { onEnd?.(); return; }
   window.speechSynthesis.cancel();
-
   const doSpeak = () => {
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang  = 'tr-TR';
@@ -93,10 +97,38 @@ function speak(text, onStart, onEnd) {
     utt.onerror = () => onEnd?.();
     window.speechSynthesis.speak(utt);
   };
-
   window.speechSynthesis.getVoices().length === 0
     ? window.speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true })
     : doSpeak();
+}
+
+// ElevenLabs TTS — maskot sesi (Web Audio API — autoplay kısıtı yok)
+async function speakElevenLabs(text, voiceId, audioRef, onStart, onEnd) {
+  if (!ELEVENLABS_KEY) { speakBrowser(text, onStart, onEnd); return; }
+  try {
+    onStart?.();
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: { 'xi-api-key': ELEVENLABS_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_turbo_v2_5',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+      }),
+    });
+    if (!res.ok) throw new Error(`ElevenLabs ${res.status}`);
+    const arrayBuffer = await res.arrayBuffer();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    source.onended = () => { ctx.close(); onEnd?.(); };
+    source.start(0);
+    if (audioRef) audioRef.current = { pause: () => { try { source.stop(); ctx.close(); } catch {} } };
+  } catch {
+    onEnd?.();
+  }
 }
 
 // ── Teknocan — gelişmiş 3D görünümlü SVG maskot ──────────────────────────────
@@ -563,30 +595,32 @@ export default function CoachPage() {
   const liveTranscriptRef   = useRef('');
   const sendAgentMsgRef     = useRef(null);
   const startRecordingRef   = useRef(null);
+  const audioRef            = useRef(null);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, simState]);
 
-  // Maskot konuşma balonu
-  const mascotSpeak = useCallback((text, nextState = 'idle') => {
+  // Maskot konuşma balonu — ElevenLabs sesi
+  const mascotSpeak = useCallback((text, nextState = 'idle', onComplete) => {
     setBubbleText(text);
     setBubbleVisible(true);
     clearTimeout(bubbleTimerRef.current);
     if (!ttsEnabled) {
       setMascotState(nextState);
-      bubbleTimerRef.current = setTimeout(() => setBubbleVisible(false), 4500);
+      bubbleTimerRef.current = setTimeout(() => { setBubbleVisible(false); onComplete?.(); }, 4500);
       return;
     }
-    speak(text,
+    const voiceId = activeMascot === 'voxera' ? VOICE_VOXI : VOICE_TEKNOCAN;
+    speakElevenLabs(text, voiceId, audioRef,
       () => setIsTalking(true),
       () => {
         setIsTalking(false);
         setMascotState(nextState);
-        bubbleTimerRef.current = setTimeout(() => setBubbleVisible(false), 3200);
+        bubbleTimerRef.current = setTimeout(() => { setBubbleVisible(false); onComplete?.(); }, 800);
       },
     );
-  }, [ttsEnabled]);
+  }, [ttsEnabled, activeMascot]);
 
   // Senaryo / maskot değişimi
   const changeScenario = (s) => {
@@ -600,16 +634,20 @@ export default function CoachPage() {
     setActiveScenario(list[0]);
   };
 
-  // Müşteri sesini TTS ile çal; bitince agent_turn'e geç
+  // Müşteri de ElevenLabs sesiyle konuşur
   const speakCustomerTurn = useCallback((text, onDone) => {
-    setIsTalking(true);
-    if (!ttsEnabled) { setIsTalking(false); onDone(); return; }
-    speak(text, () => {}, () => { setIsTalking(false); onDone(); });
-  }, [ttsEnabled]);
+    if (!ttsEnabled) { onDone(); return; }
+    const voiceId = activeMascot === 'voxera' ? VOICE_VOXI : VOICE_TEKNOCAN;
+    speakElevenLabs(text, voiceId, audioRef,
+      () => setIsTalking(true),
+      () => { setIsTalking(false); onDone(); },
+    );
+  }, [ttsEnabled, activeMascot]);
 
   // Simülasyonu başlat
   const startSim = () => {
     window.speechSynthesis?.cancel();
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     recognitionRef.current?.stop();
     const opening = { role: 'customer', text: activeScenario.startMsg, time: nowStr() };
     setChatHistory([opening]);
@@ -619,14 +657,11 @@ export default function CoachPage() {
     setLiveTranscript('');
     liveTranscriptRef.current = '';
     setMascotState('listening');
-    setBubbleText(activeScenario.mascotMesaj);
-    setBubbleVisible(true);
-    clearTimeout(bubbleTimerRef.current);
-    bubbleTimerRef.current = setTimeout(() => setBubbleVisible(false), 6000);
-
-    speakCustomerTurn(activeScenario.startMsg, () => {
-      setSimState('agent_turn');
-      setMascotState('idle');
+    mascotSpeak(activeScenario.mascotMesaj, 'listening', () => {
+      speakCustomerTurn(activeScenario.startMsg, () => {
+        setSimState('agent_turn');
+        setMascotState('idle');
+      });
     });
   };
 
@@ -634,6 +669,7 @@ export default function CoachPage() {
   const stopSim = () => {
     recognitionRef.current?.stop();
     window.speechSynthesis?.cancel();
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     setSimState('idle');
     setChatHistory([]);
     setEvalResult(null);

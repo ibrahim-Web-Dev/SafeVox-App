@@ -44,12 +44,14 @@ export function VoxeraHead({ state = 'idle', isTalking = false, size = 220 }) {
 
         {state === 'thinking' && [0,1,2].map((i) => (
           <motion.circle key={i} cx={155 + i * 45} cy="462" r="11" fill="#A78BFA"
+            style={{ transformOrigin: `${155 + i * 45}px 462px` }}
             animate={{ opacity: [0.2, 1, 0.2], y: [0, -14, 0] }}
             transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.18 }} />
         ))}
 
         {state === 'happy' && [[-80,-90],[-115,-45],[85,-95],[112,-50],[-18,-145],[44,-138]].map(([x, y], i) => (
           <motion.circle key={i} cx={200+x} cy={195+y} r="12" fill="#C4B5FD"
+            style={{ transformOrigin: `${200+x}px ${195+y}px` }}
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: [0, 0.85, 0], scale: [0, 1.3, 0] }}
             transition={{ duration: 0.62, delay: i * 0.07, repeat: 3 }} />
@@ -57,13 +59,15 @@ export function VoxeraHead({ state = 'idle', isTalking = false, size = 220 }) {
 
         {state === 'listening' && (
           <motion.ellipse cx="200" cy="195" rx="100" ry="96" stroke="#A78BFA" strokeWidth="6" fill="none"
-            animate={{ opacity: [0.55, 0, 0.55], rx: [100, 120, 100], ry: [96, 116, 96] }}
+            style={{ transformOrigin: '200px 195px' }}
+            animate={{ opacity: [0.55, 0, 0.55], scale: [1, 1.2, 1] }}
             transition={{ duration: 1.2, repeat: Infinity }} />
         )}
 
         {isTalking && (
-          <motion.ellipse cx="200" cy="240" rx="22" ry="14" fill="#8B5CF6" opacity="0.25"
-            animate={{ ry: [10, 20, 10], opacity: [0.18, 0.38, 0.18] }}
+          <motion.ellipse cx="200" cy="240" rx="22" ry="14" fill="#8B5CF6"
+            style={{ transformOrigin: '200px 240px' }}
+            animate={{ scaleY: [0.7, 1.4, 0.7], opacity: [0.18, 0.38, 0.18] }}
             transition={{ duration: 0.26, repeat: Infinity, ease: 'easeInOut' }} />
         )}
       </svg>
