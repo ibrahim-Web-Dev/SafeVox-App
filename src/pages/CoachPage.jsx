@@ -80,7 +80,20 @@ const ELEVENLABS_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
 const VOICE_VOXI     = 'PDXaJVX420kXqPLLIOY4';
 const VOICE_TEKNOCAN = 'dPV8YcOEtF8RVJFPcw6f';
 
-// Browser TTS — müşteri simülasyon sesi
+// Paylaşımlı AudioContext — autoplay kısıtını aşmak için tek context kullanılır
+let _sharedAudioCtx = null;
+function getAudioCtx() {
+  if (!_sharedAudioCtx || _sharedAudioCtx.state === 'closed') {
+    _sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return _sharedAudioCtx;
+}
+// User gesture anında çağrılır — context'i "running" duruma alır
+function wakeAudio() {
+  try { getAudioCtx().resume(); } catch {}
+}
+
+// Browser TTS — fallback
 function speakBrowser(text, onStart, onEnd) {
   if (!('speechSynthesis' in window)) { onEnd?.(); return; }
   window.speechSynthesis.cancel();
@@ -102,7 +115,7 @@ function speakBrowser(text, onStart, onEnd) {
     : doSpeak();
 }
 
-// ElevenLabs TTS — maskot sesi (Web Audio API — autoplay kısıtı yok)
+// ElevenLabs TTS — paylaşımlı AudioContext ile, her seferinde yeni context oluşturulmaz
 async function speakElevenLabs(text, voiceId, audioRef, onStart, onEnd) {
   if (!ELEVENLABS_KEY) { speakBrowser(text, onStart, onEnd); return; }
   try {
@@ -118,14 +131,15 @@ async function speakElevenLabs(text, voiceId, audioRef, onStart, onEnd) {
     });
     if (!res.ok) throw new Error(`ElevenLabs ${res.status}`);
     const arrayBuffer = await res.arrayBuffer();
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioCtx();
+    await ctx.resume(); // context askıdaysa kaldır
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(ctx.destination);
-    source.onended = () => { ctx.close(); onEnd?.(); };
+    source.onended = () => { onEnd?.(); };
     source.start(0);
-    if (audioRef) audioRef.current = { pause: () => { try { source.stop(); ctx.close(); } catch {} } };
+    if (audioRef) audioRef.current = { pause: () => { try { source.stop(); } catch {} } };
   } catch {
     onEnd?.();
   }
@@ -646,6 +660,7 @@ export default function CoachPage() {
 
   // Simülasyonu başlat
   const startSim = () => {
+    wakeAudio(); // AudioContext'i user gesture anında resume et
     window.speechSynthesis?.cancel();
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     recognitionRef.current?.stop();
@@ -778,6 +793,7 @@ Yalnızca JSON döndür:
 
   // Mikrofon kaydı
   const startRecording = useCallback(() => {
+    wakeAudio(); // Ses kaydı başlangıcında da context'i canlı tut
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { mascotSpeak('Chrome kullanman gerekiyor!', 'sad'); return; }
     const rec = new SR();
@@ -1104,11 +1120,11 @@ Yalnızca JSON döndür:
                         <input type="text"
                           value={agentInput}
                           onChange={e => setAgentInput(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter' && agentInput.trim()) { sendAgentMessage(agentInput); setAgentInput(''); }}}
+                          onKeyDown={e => { if (e.key === 'Enter' && agentInput.trim()) { wakeAudio(); sendAgentMessage(agentInput); setAgentInput(''); }}}
                           placeholder="Yazarak da yanıtlayabilirsiniz..."
                           className="flex-1 text-sm text-slate-600 placeholder:text-slate-300 bg-indigo-50/60 border border-indigo-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-300 transition"
                         />
-                        <button onClick={() => { if(agentInput.trim()) { sendAgentMessage(agentInput); setAgentInput(''); }}}
+                        <button onClick={() => { if(agentInput.trim()) { wakeAudio(); sendAgentMessage(agentInput); setAgentInput(''); }}}
                           disabled={!agentInput.trim()}
                           className={`p-2.5 rounded-xl transition disabled:opacity-30 ${
                             activeMascot === 'voxera' ? 'bg-violet-100 text-violet-600 hover:bg-violet-200' : 'bg-amber-100 text-amber-600 hover:bg-amber-200'
