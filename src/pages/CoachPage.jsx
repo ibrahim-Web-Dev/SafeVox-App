@@ -1060,6 +1060,7 @@ Yalnızca JSON döndür:
                 </div>
 
                 {/* ── Ses fazı paneli ── */}
+                <div style={{ minHeight: 160 }}>
                 <AnimatePresence mode="wait">
 
                   {/* Müşteri konuşuyor */}
@@ -1166,6 +1167,7 @@ Yalnızca JSON döndür:
                   )}
 
                 </AnimatePresence>
+                </div>
               </motion.div>
             )}
 
